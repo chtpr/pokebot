@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="edu.northeastern.cs5500.starterbot.controller.TradeControllerTest" tests="26" skipped="0" failures="0" errors="0" timestamp="2022-05-06T20:35:22" hostname="Christophers-MacBook-Pro.local" time="0.021">
+  <properties/>
+  <testcase name="testCannotCompleteTradeWhichNotExist()" classname="edu.northeastern.cs5500.starterbot.controller.TradeControllerTest" time="0.001"/>
+  <testcase name="testCannotCompleteTradeOfferFromUserMissing()" classname="edu.northeastern.cs5500.starterbot.controller.TradeControllerTest" time="0.002"/>
+  <testcase name="testAcceptTradeRequestSuccess()" classname="edu.northeastern.cs5500.starterbot.controller.TradeControllerTest" time="0.0"/>
+  <testcase name="testCannotCompleteTradeOfferFromUser2Missing()" classname="edu.northeastern.cs5500.starterbot.controller.TradeControllerTest" time="0.001"/>
+  <testcase name="testOfferPokemonOnNotConfirmedTrade()" classname="edu.northeastern.cs5500.starterbot.controller.TradeControllerTest" time="0.0"/>
+  <testcase name="testCompleteTradeSuccess()" classname="edu.northeastern.cs5500.starterbot.controller.TradeControllerTest" time="0.001"/>
+  <testcase name="testUser2AcceptsTradeAgain()" classname="edu.northeastern.cs5500.starterbot.controller.TradeControllerTest" time="0.001"/>
+  <testcase name="testAcceptTradeRequestOnTradeNotExist()" classname="edu.northeastern.cs5500.starterbot.controller.TradeControllerTest" time="0.0"/>
+  <testcase name="testGetNotFoundTrade()" classname="edu.northeastern.cs5500.starterbot.controller.TradeControllerTest" time="0.0"/>
+  <testcase name="testCannotCompleteTradeUser2NoLongerHavePokemon()" classname="edu.northeastern.cs5500.starterbot.controller.TradeControllerTest" time="0.001"/>
+  <testcase name="testSuccessfullyGetTrade1()" classname="edu.northeastern.cs5500.starterbot.controller.TradeControllerTest" time="0.0"/>
+  <testcase name="testSuccessfullyGetTrade2()" classname="edu.northeastern.cs5500.starterbot.controller.TradeControllerTest" time="0.0"/>
+  <testcase name="testCancelTradeSuccess()" classname="edu.northeastern.cs5500.starterbot.controller.TradeControllerTest" time="0.001"/>
+  <testcase name="testOfferPokemonOnNonexistTrade()" classname="edu.northeastern.cs5500.starterbot.controller.TradeControllerTest" time="0.0"/>
+  <testcase name="testBeginTradeSuccess()" classname="edu.northeastern.cs5500.starterbot.controller.TradeControllerTest" time="0.001"/>
+  <testcase name="testCannotCompleteTradeUser1NoLongerHavePokemon()" classname="edu.northeastern.cs5500.starterbot.controller.TradeControllerTest" time="0.001"/>
+  <testcase name="testUser1AcceptsTradeAgain()" classname="edu.northeastern.cs5500.starterbot.controller.TradeControllerTest" time="0.001"/>
+  <testcase name="testCannotTradeUser2GotNoParty()" classname="edu.northeastern.cs5500.starterbot.controller.TradeControllerTest" time="0.0"/>
+  <testcase name="testOfferPokemonSuccess()" classname="edu.northeastern.cs5500.starterbot.controller.TradeControllerTest" time="0.0"/>
+  <testcase name="testAcceptTradeSuccess()" classname="edu.northeastern.cs5500.starterbot.controller.TradeControllerTest" time="0.001"/>
+  <testcase name="testCancelNotExistTrade()" classname="edu.northeastern.cs5500.starterbot.controller.TradeControllerTest" time="0.0"/>
+  <testcase name="testPokemonsSwitchedProperly()" classname="edu.northeastern.cs5500.starterbot.controller.TradeControllerTest" time="0.0"/>
+  <testcase name="testCannotTradeWithSelf()" classname="edu.northeastern.cs5500.starterbot.controller.TradeControllerTest" time="0.0"/>
+  <testcase name="testCannotCompleteTradeMissingConfirmation()" classname="edu.northeastern.cs5500.starterbot.controller.TradeControllerTest" time="0.001"/>
+  <testcase name="testCannotTradeUser1GotNoParty()" classname="edu.northeastern.cs5500.starterbot.controller.TradeControllerTest" time="0.0"/>
+  <testcase name="testAcceptNonexistTrade()" classname="edu.northeastern.cs5500.starterbot.controller.TradeControllerTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.TradeController - Created TradeController
+[Test worker] ERROR edu.northeastern.cs5500.starterbot.controller.TradeController - Attempt to complete a trade that does not exist
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.TradeController - Created TradeController
+[Test worker] ERROR edu.northeastern.cs5500.starterbot.controller.TradeController - Attempt to complete a trade where some offers are missing
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.TradeController - Created TradeController
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.TradeController - Created TradeController
+[Test worker] ERROR edu.northeastern.cs5500.starterbot.controller.TradeController - Attempt to complete a trade where some offers are missing
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.TradeController - Created TradeController
+[Test worker] ERROR edu.northeastern.cs5500.starterbot.controller.TradeController - 2kjfksdjdkhokljhaoe offered pokemon on a trade which hasn't started yet
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.TradeController - Created TradeController
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.TradeController - Created TradeController
+[Test worker] ERROR edu.northeastern.cs5500.starterbot.controller.TradeController - 2kjfksdjdkhokljhaoe accepted the same trade more than once
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.TradeController - Created TradeController
+[Test worker] ERROR edu.northeastern.cs5500.starterbot.controller.TradeController - 23h5ikoqaehokljhaoe accepted a trade request but no trade exists
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.TradeController - Created TradeController
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.TradeController - Created TradeController
+[Test worker] ERROR edu.northeastern.cs5500.starterbot.controller.TradeController - User 2 no longer possesses their pokemon
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.TradeController - Created TradeController
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.TradeController - Created TradeController
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.TradeController - Created TradeController
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.TradeController - 2kjfksdjdkhokljhaoe cancelled their trade
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.TradeController - Created TradeController
+[Test worker] ERROR edu.northeastern.cs5500.starterbot.controller.TradeController - 23h5ikoqaehokljhaoe offered pokemon on a trade but no trade exists
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.TradeController - Created TradeController
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.TradeController - Created TradeController
+[Test worker] ERROR edu.northeastern.cs5500.starterbot.controller.TradeController - User 1 no longer possesses their pokemon
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.TradeController - Created TradeController
+[Test worker] ERROR edu.northeastern.cs5500.starterbot.controller.TradeController - 23h5ikoqaehokljhaoe accepted the same trade more than once
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.TradeController - Created TradeController
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.TradeController - 23h5ikoqaehokljhaoe tried to trade with 2kjfksdjdkhokljhaoe who has no pokemons
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.TradeController - Created TradeController
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.TradeController - 23h5ikoqaehokljhaoe (user 1) offered to trade 6275868aa088872208b58cc6
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.TradeController - Created TradeController
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.TradeController - Created TradeController
+[Test worker] ERROR edu.northeastern.cs5500.starterbot.controller.TradeController - 23h5ikoqaehokljhaoe tried to cancel a trade that does not exist
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.TradeController - Created TradeController
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.TradeController - Created TradeController
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.TradeController - 23h5ikoqaehokljhaoe tried to trade with themselves
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.TradeController - Created TradeController
+[Test worker] ERROR edu.northeastern.cs5500.starterbot.controller.TradeController - Attempt to complete a trade where not everybody has confirmed it
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.TradeController - Created TradeController
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.TradeController - 23h5ikoqaehokljhaoe tried to trade with empty party
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.TradeController - Created TradeController
+[Test worker] ERROR edu.northeastern.cs5500.starterbot.controller.TradeController - 23h5ikoqaehokljhaoe accepted a trade but no trade exists
+]]></system-err>
+</testsuite>

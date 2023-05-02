@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PokedexController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edu.northeastern.cs5500.starterbot</a> &gt; <a href="index.source.html" class="el_package">edu.northeastern.cs5500.starterbot.controller</a> &gt; <span class="el_source">PokedexController.java</span></div><h1>PokedexController.java</h1><pre class="source lang-java linenums">package edu.northeastern.cs5500.starterbot.controller;
+
+import edu.northeastern.cs5500.starterbot.model.PokedexEntry;
+import edu.northeastern.cs5500.starterbot.repository.GenericRepository;
+import edu.northeastern.cs5500.starterbot.service.PokemonShowdownEntry;
+import edu.northeastern.cs5500.starterbot.service.PokemonShowdownService;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Random;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * PokedexController is used to look up entries in the pokedex.
+ *
+ * &lt;p&gt;Pokedex entries describe pokemon of a specific type; e.g. what percentage of Pikachu are
+ * female?
+ */
+<span class="fc" id="L23">@Slf4j</span>
+@Singleton
+public class PokedexController {
+    // Handpick the Pokemon we want to include
+<span class="fc" id="L27">    static final String[] POKEMON_NAMES = {</span>
+        &quot;bulbasaur&quot;,
+        &quot;charmander&quot;,
+        &quot;squirtle&quot;,
+        &quot;pikachu&quot;,
+        &quot;eevee&quot;,
+        &quot;vaporeon&quot;,
+        &quot;jolteon&quot;,
+        &quot;flareon&quot;,
+        &quot;mew&quot;,
+        &quot;espeon&quot;,
+        &quot;umbreon&quot;,
+        &quot;mightyena&quot;
+    };
+
+    GenericRepository&lt;PokedexEntry&gt; pokedexRepository;
+    PokemonShowdownService pokemonShowdownService;
+
+    @Inject
+    public PokedexController(
+            GenericRepository&lt;PokedexEntry&gt; pokedexRepository,
+<span class="fc" id="L48">            PokemonShowdownService pokemonShowdownService) {</span>
+<span class="fc" id="L49">        this.pokemonShowdownService = pokemonShowdownService;</span>
+<span class="fc" id="L50">        this.pokedexRepository = pokedexRepository;</span>
+
+        // if pokedex repository is empty
+<span class="fc bfc" id="L53" title="All 2 branches covered.">        if (pokedexRepository.count() == 0) {</span>
+<span class="fc" id="L54">            Map&lt;String, PokemonShowdownEntry&gt; pokedex = pokemonShowdownService.fetchPokedex();</span>
+            // create a pokedex entry from a showdown entry for each name
+<span class="fc bfc" id="L56" title="All 2 branches covered.">            for (String pokemonName : POKEMON_NAMES) {</span>
+<span class="fc" id="L57">                PokemonShowdownEntry showdownEntry = pokedex.get(pokemonName);</span>
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">                if (showdownEntry == null) {</span>
+<span class="nc" id="L59">                    log.error(&quot;Unable to find a pokemon in showdown matching '{}'&quot;, pokemonName);</span>
+<span class="nc" id="L60">                    continue;</span>
+                }
+
+<span class="fc" id="L63">                PokedexEntry entry = new PokedexEntry();</span>
+<span class="fc" id="L64">                entry.setPokedexNumber(showdownEntry.getNum());</span>
+<span class="fc" id="L65">                entry.setName(showdownEntry.getName());</span>
+
+<span class="fc" id="L67">                ArrayList&lt;String&gt; pokemonTypes = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L68">                String[] showdownTypes = showdownEntry.getTypes();</span>
+<span class="fc bfc" id="L69" title="All 2 branches covered.">                for (String t : showdownTypes) {</span>
+<span class="fc" id="L70">                    pokemonTypes.add(t);</span>
+                }
+<span class="fc" id="L72">                entry.setPokemonTypes(pokemonTypes);</span>
+<span class="fc" id="L73">                entry.setGenderRatio(showdownEntry.getGenderRatio());</span>
+<span class="fc" id="L74">                entry.genderRatio();</span>
+<span class="fc" id="L75">                entry.setBaseStats(showdownEntry.getBaseStats());</span>
+<span class="fc" id="L76">                log.info(&quot;created pokemon '{}'&quot;, showdownEntry.getName());</span>
+                // add to the repository
+<span class="fc" id="L78">                pokedexRepository.add(entry);</span>
+            }
+        }
+<span class="fc" id="L81">        log.info(&quot;Created PokedexController&quot;);</span>
+<span class="fc" id="L82">    }</span>
+
+    /**
+     * Gets a Pokemon from the repository when provided with the Pokemon number.
+     *
+     * @param pokedexNumber the Pokemon number
+     * @return a Pokemon, null if not found
+     */
+    @Nullable
+    public PokedexEntry getPokemonWithNumber(long pokedexNumber) {
+<span class="fc" id="L92">        Collection&lt;PokedexEntry&gt; entries = pokedexRepository.getAll();</span>
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">        for (PokedexEntry entry : entries) {</span>
+<span class="fc bfc" id="L94" title="All 2 branches covered.">            if (entry.getPokedexNumber() == pokedexNumber) {</span>
+<span class="fc" id="L95">                return entry;</span>
+            }
+<span class="fc" id="L97">        }</span>
+<span class="nc" id="L98">        return null;</span>
+    }
+
+    /**
+     * Gets a random pokedex entry. To be used when catching a Pokemon.
+     *
+     * @return a random pokedex entry
+     */
+    @Nonnull
+    public PokedexEntry getRandomPokedexEntry() {
+<span class="fc" id="L108">        int index = (new Random()).nextInt((int) pokedexRepository.count());</span>
+
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">        for (PokedexEntry entry : pokedexRepository.getAll()) {</span>
+<span class="fc bfc" id="L111" title="All 2 branches covered.">            if (index-- == 0) {</span>
+<span class="fc" id="L112">                return entry;</span>
+            }
+<span class="fc" id="L114">        }</span>
+
+<span class="nc" id="L116">        log.error(&quot;Logic error - should never be unable to get a random Pokemon&quot;);</span>
+<span class="nc" id="L117">        throw new RuntimeException(&quot;Logic error - should never be unable to get a random Pokemon&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

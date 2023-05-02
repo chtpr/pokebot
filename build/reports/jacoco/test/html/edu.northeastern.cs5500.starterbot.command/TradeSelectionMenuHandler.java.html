@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TradeSelectionMenuHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edu.northeastern.cs5500.starterbot</a> &gt; <a href="index.source.html" class="el_package">edu.northeastern.cs5500.starterbot.command</a> &gt; <span class="el_source">TradeSelectionMenuHandler.java</span></div><h1>TradeSelectionMenuHandler.java</h1><pre class="source lang-java linenums">package edu.northeastern.cs5500.starterbot.command;
+
+import edu.northeastern.cs5500.starterbot.annotation.ExcludeFromJacocoGeneratedReport;
+import edu.northeastern.cs5500.starterbot.controller.PokemonController;
+import edu.northeastern.cs5500.starterbot.controller.TradeController;
+import edu.northeastern.cs5500.starterbot.controller.UserInventoryController;
+import edu.northeastern.cs5500.starterbot.exception.TradeException;
+import edu.northeastern.cs5500.starterbot.model.Pokemon;
+import edu.northeastern.cs5500.starterbot.model.Trade;
+import edu.northeastern.cs5500.starterbot.utils.TradeMessageUtil;
+import java.util.List;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import lombok.extern.slf4j.Slf4j;
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.MessageBuilder;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.interaction.SelectionMenuEvent;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.Button;
+import net.dv8tion.jda.api.requests.RestAction;
+import org.bson.types.ObjectId;
+
+/** TradeSelectionMenuHandler allows to process users choice of pokemons to trade */
+@Singleton
+<span class="fc" id="L28">@Slf4j</span>
+public class TradeSelectionMenuHandler implements SelectionMenuHandler {
+
+    @Inject TradeController tradeController;
+    @Inject UserInventoryController inventoryController;
+    @Inject PokemonController pokemonController;
+    @Inject TradeMessageUtil msgUtil;
+
+    @Inject
+<span class="fc" id="L37">    public TradeSelectionMenuHandler() {}</span>
+
+    /**
+     * Gets the trade selection menu handler name.
+     *
+     * @return name - the name of the trade selection menu handler
+     */
+    @Override
+    public String getName() {
+<span class="fc" id="L46">        return &quot;trade&quot;;</span>
+    }
+    /**
+     * Creates an embed with pokemon a party chose for trading
+     *
+     * @param title title of the embed
+     * @param description description of the embed
+     * @param imageURL a URL of pokemon image
+     * @return a message
+     */
+    Message renderPokemonMessage(String title, String description, String imageURL) {
+<span class="fc" id="L57">        EmbedBuilder embedBuilder = new EmbedBuilder();</span>
+<span class="fc" id="L58">        embedBuilder.setTitle(title);</span>
+<span class="fc" id="L59">        embedBuilder.setDescription(description);</span>
+<span class="fc" id="L60">        embedBuilder.setImage(imageURL);</span>
+<span class="fc" id="L61">        MessageBuilder messageBuilder = new MessageBuilder();</span>
+<span class="fc" id="L62">        messageBuilder.setEmbeds(embedBuilder.build());</span>
+<span class="fc" id="L63">        return messageBuilder.build();</span>
+    }
+
+    /**
+     * Creates a message user will get when choose their own pokemon to trade. This message will
+     * contain the name and image of their choice.
+     *
+     * @param pokemon a pokemon user wants to exchange
+     * @return a message
+     */
+    Message renderOwnChoiceConfirmation(Pokemon pokemon) {
+<span class="fc" id="L74">        return renderPokemonMessage(</span>
+                &quot;Your trade offer&quot;,
+<span class="fc" id="L76">                String.format(&quot;You've chosen Level %s %s&quot;, pokemon.getLevel(), pokemon.getName()),</span>
+<span class="fc" id="L77">                pokemon.getImage());</span>
+    }
+
+    /**
+     * Creates a message user will get when other party their own pokemon to trade. This message
+     * will contain the name and image of their choice.
+     *
+     * @param pokemon a pokemon the other user in trade wants to exchange
+     * @param sourceUserName a name of the other user in trade
+     * @param sourceUserMention a name of the other user in trade as mention
+     * @return a message
+     */
+    Message renderOthersChoiceConfirmation(
+            Pokemon pokemon, String sourceUserName, String sourceUserMention) {
+<span class="fc" id="L91">        return renderPokemonMessage(</span>
+<span class="fc" id="L92">                String.format(&quot;Trade offer from %s&quot;, sourceUserName),</span>
+<span class="fc" id="L93">                String.format(</span>
+                        &quot;%s has chosen Level %s %s&quot;,
+<span class="fc" id="L95">                        sourceUserMention, pokemon.getLevel(), pokemon.getName()),</span>
+<span class="fc" id="L96">                pokemon.getImage());</span>
+    }
+
+    /**
+     * Creates a message with final trade confirmation embed
+     *
+     * @param otherUserAsMention a name of the other user in trade as mention
+     * @param primaryUserPokemon primary user's pokemon offer
+     * @param otherUserPokemon the other user's pokemon offer
+     * @return message
+     */
+    Message renderFinalConfirmationMessage(
+            String otherUserAsMention, Pokemon primaryUserPokemon, Pokemon otherUserPokemon) {
+<span class="fc" id="L109">        EmbedBuilder embedBuilder = new EmbedBuilder();</span>
+<span class="fc" id="L110">        embedBuilder.setTitle(&quot;Please confirm the trade&quot;);</span>
+<span class="fc" id="L111">        embedBuilder.setDescription(</span>
+<span class="fc" id="L112">                String.format(</span>
+                        &quot;Your Level %s pokemon %s will be exchanged for %s's Level %s pokemon %s&quot;,
+<span class="fc" id="L114">                        primaryUserPokemon.getLevel(),</span>
+<span class="fc" id="L115">                        primaryUserPokemon.getName(),</span>
+                        otherUserAsMention,
+<span class="fc" id="L117">                        otherUserPokemon.getLevel(),</span>
+<span class="fc" id="L118">                        otherUserPokemon.getName()));</span>
+<span class="fc" id="L119">        MessageEmbed embed = embedBuilder.build();</span>
+<span class="fc" id="L120">        MessageBuilder messageBuilder = new MessageBuilder();</span>
+<span class="fc" id="L121">        return messageBuilder</span>
+<span class="fc" id="L122">                .setEmbeds(embed)</span>
+<span class="fc" id="L123">                .setActionRows(</span>
+<span class="fc" id="L124">                        ActionRow.of(</span>
+<span class="fc" id="L125">                                Button.success(&quot;confirm_trade&quot;, &quot;Confirm trade&quot;),</span>
+<span class="fc" id="L126">                                Button.danger(&quot;cancel_trade&quot;, &quot;Cancel trade&quot;)))</span>
+<span class="fc" id="L127">                .build();</span>
+    }
+
+    /**
+     * Sends trade confirmation message
+     *
+     * @param trade current trade
+     * @param primaryUser primary user
+     * @param otherUser another user in trade
+     * @param primaryUserPokemon primary user's pokemon offered to trade
+     * @param otherUserPokemon another user's pokemon offered to trade
+     */
+    @ExcludeFromJacocoGeneratedReport
+    private void sendFinalConfirmationDM(
+            Trade trade,
+            User primaryUser,
+            User otherUser,
+            Pokemon primaryUserPokemon,
+            Pokemon otherUserPokemon) {
+        Message message =
+                renderFinalConfirmationMessage(
+                        otherUser.getAsMention(), primaryUserPokemon, otherUserPokemon);
+        primaryUser
+                .openPrivateChannel()
+<span class="nc" id="L151">                .flatMap(channel -&gt; channel.sendMessage(message))</span>
+<span class="nc" id="L152">                .queue(msg -&gt; tradeController.addPendingMessageId(trade.getId(), msg.getId()));</span>
+    }
+
+    /**
+     * Sends a DM with selections
+     *
+     * @param event SelectionMenuEvent event
+     * @param otherUser another party in trade
+     * @param pokemon selected pokemon
+     * @param trade current trade
+     * @return RestAction&lt;Void&gt;
+     */
+    @ExcludeFromJacocoGeneratedReport
+    private RestAction&lt;Void&gt; sendSelectionDMs(
+            SelectionMenuEvent event, User otherUser, Pokemon pokemon, Trade trade) {
+
+        return event.reply(renderOwnChoiceConfirmation(pokemon))
+                .and(
+                        msgUtil.sendDM(
+                                event.getJDA(),
+                                trade,
+                                otherUser.getId(),
+                                renderOthersChoiceConfirmation(
+                                        pokemon,
+                                        event.getUser().getName(),
+                                        event.getUser().getAsMention())));
+    }
+
+    /**
+     * A helper to send a DM with selections
+     *
+     * @param trade current trade
+     * @param user1 primary user
+     * @param user2 another user in trade
+     * @param pokemon1 a pokemon selected by user1
+     * @param pokemon2 a pokemon selected by user2
+     */
+    @ExcludeFromJacocoGeneratedReport
+    private void sendOutFinalConfirmations(
+            Trade trade, User user1, User user2, Pokemon pokemon1, Pokemon pokemon2) {
+        sendFinalConfirmationDM(trade, user1, user2, pokemon1, pokemon2);
+        sendFinalConfirmationDM(trade, user2, user1, pokemon2, pokemon1);
+    }
+
+    /**
+     * Sends out messages
+     *
+     * @param event SelectionMenuEvent event
+     * @param otherUser another user in trade
+     * @param pokemon a chosen pokemon
+     * @param trade current trade
+     */
+    @ExcludeFromJacocoGeneratedReport
+    private void sendOutMessages(
+            SelectionMenuEvent event, User otherUser, Pokemon pokemon, Trade trade) {
+        sendSelectionDMs(event, otherUser, pokemon, trade)
+                .queue(
+                        _result -&gt; {
+<span class="nc" id="L210">                            log.info(</span>
+                                    &quot;User 1 offered {}, user 2 offered {}&quot;,
+<span class="nc" id="L212">                                    trade.getUser1Offer(),</span>
+<span class="nc" id="L213">                                    trade.getUser2Offer());</span>
+<span class="nc bnc" id="L214" title="All 4 branches missed.">                            if (trade.getUser1Offer() != null &amp;&amp; trade.getUser2Offer() != null) {</span>
+<span class="nc" id="L215">                                log.info(</span>
+                                        &quot;All selections are made, sending out final confirmation messages&quot;);
+<span class="nc" id="L217">                                Boolean isUser1Offering =</span>
+<span class="nc" id="L218">                                        trade.getUser1Id().equals(event.getUser().getId());</span>
+<span class="nc" id="L219">                                sendOutFinalConfirmations(</span>
+                                        trade,
+<span class="nc bnc" id="L221" title="All 2 branches missed.">                                        isUser1Offering ? event.getUser() : otherUser,</span>
+<span class="nc bnc" id="L222" title="All 2 branches missed.">                                        !isUser1Offering ? event.getUser() : otherUser,</span>
+<span class="nc" id="L223">                                        pokemonController.getPokemonById(trade.getUser1Offer()),</span>
+<span class="nc" id="L224">                                        pokemonController.getPokemonById(trade.getUser2Offer()));</span>
+                            }
+<span class="nc" id="L226">                        });</span>
+    }
+
+    /**
+     * Executes a procedure based on the the trade selection menu event for that trade selection
+     * menu handler.
+     *
+     * @param event - a trade election menu event
+     */
+    @ExcludeFromJacocoGeneratedReport
+    @Override
+    public void onSelectionMenu(SelectionMenuEvent event) {
+        try {
+            // Prepare all the data
+            List&lt;String&gt; values = event.getInteraction().getValues();
+            if (values.size() != 1) {
+                throw new TradeException(&quot;Please select a pokemon&quot;);
+            }
+            ObjectId pokemonId = new ObjectId(values.get(0).split(&quot;:&quot;)[1]);
+            Trade trade = tradeController.offerPokemon(event.getUser().getId(), pokemonId);
+            Pokemon pokemon = pokemonController.getPokemonById(pokemonId);
+            String otherUserId;
+            if (trade.getUser1Id().equals(event.getUser().getId())) {
+                otherUserId = trade.getUser2Id();
+            } else {
+                otherUserId = trade.getUser1Id();
+            }
+            // Send out messages
+            event.getJDA()
+                    .retrieveUserById(otherUserId)
+<span class="nc" id="L256">                    .queue(otherUser -&gt; sendOutMessages(event, otherUser, pokemon, trade));</span>
+            event.getMessage().delete().queue();
+        } catch (TradeException e) {
+            event.reply(e.getMessage()).queue();
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

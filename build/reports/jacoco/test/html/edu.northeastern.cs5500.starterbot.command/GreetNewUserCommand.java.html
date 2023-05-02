@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GreetNewUserCommand.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edu.northeastern.cs5500.starterbot</a> &gt; <a href="index.source.html" class="el_package">edu.northeastern.cs5500.starterbot.command</a> &gt; <span class="el_source">GreetNewUserCommand.java</span></div><h1>GreetNewUserCommand.java</h1><pre class="source lang-java linenums">package edu.northeastern.cs5500.starterbot.command;
+
+import edu.northeastern.cs5500.starterbot.annotation.ExcludeFromJacocoGeneratedReport;
+import edu.northeastern.cs5500.starterbot.utils.MessageUtil;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import lombok.extern.slf4j.Slf4j;
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.events.guild.GenericGuildEvent;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
+
+/** The greet new user command sends a direct message to a user, welcoming them to the server. */
+@Singleton
+<span class="fc" id="L15">@Slf4j</span>
+public class GreetNewUserCommand implements GuildEventHandler {
+
+    static final String WELCOME_NEW_USER_IMAGE_URL =
+            &quot;https://graphicxtreme.com/wp-content/uploads/2020/04/pokemon-banner-1000x500.jpg&quot;;
+
+    @Inject
+<span class="fc" id="L22">    public GreetNewUserCommand() {}</span>
+
+    MessageEmbed generateGreetUserEmbed() {
+<span class="fc" id="L25">        EmbedBuilder embedBuilder = new EmbedBuilder();</span>
+<span class="fc" id="L26">        embedBuilder.setTitle(&quot;Welcome!&quot;);</span>
+<span class="fc" id="L27">        embedBuilder.setDescription(</span>
+                &quot;Hello new trainer, welcome to the TeamAlpaca Pokemon Server!\n\nHere you can experience the wonders of Pokemon in its simplest form by sticking to the basics: catching, trading, and battling.&quot;);
+<span class="fc" id="L29">        embedBuilder.setImage(WELCOME_NEW_USER_IMAGE_URL);</span>
+<span class="fc" id="L30">        return embedBuilder.build();</span>
+    }
+
+    /**
+     * Executes a direct message greeting to the user who joined the server.
+     *
+     * @param genericEvent - a generic guild event, expected to be a GuildMemberJoinEvent
+     */
+    @ExcludeFromJacocoGeneratedReport
+    @Override
+    public void onGuildEvent(GenericGuildEvent genericEvent) {
+        GuildMemberJoinEvent event = (GuildMemberJoinEvent) genericEvent;
+        log.info(
+                String.format(&quot;Greeting new member with member ID: %s&quot;, event.getMember().getId()));
+        MessageUtil.sendDirectMessage(event.getUser(), generateGreetUserEmbed(), false, 0);
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

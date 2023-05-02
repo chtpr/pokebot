@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BattleButtonClickHandleDecline.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edu.northeastern.cs5500.starterbot</a> &gt; <a href="index.source.html" class="el_package">edu.northeastern.cs5500.starterbot.command</a> &gt; <span class="el_source">BattleButtonClickHandleDecline.java</span></div><h1>BattleButtonClickHandleDecline.java</h1><pre class="source lang-java linenums">package edu.northeastern.cs5500.starterbot.command;
+
+import edu.northeastern.cs5500.starterbot.annotation.ExcludeFromJacocoGeneratedReport;
+import edu.northeastern.cs5500.starterbot.controller.BattleController;
+import edu.northeastern.cs5500.starterbot.exception.BattleException;
+import edu.northeastern.cs5500.starterbot.model.Battle;
+import edu.northeastern.cs5500.starterbot.utils.BattleMessageUtil;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import lombok.extern.slf4j.Slf4j;
+import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
+
+/** BattleButtonClickHandleDecline allows to process decline of the battle request. */
+@Singleton
+<span class="fc" id="L15">@Slf4j</span>
+public class BattleButtonClickHandleDecline implements ButtonClickHandler {
+
+    public static final String DECLINE_BATTLE = &quot;decline_battle&quot;;
+    public static final String CLICKED_DECLINE_BUTTON = &quot;%s clicked decline button&quot;;
+    public static final String THE_BATTLE_HAS_BEEN_CANCELLED =
+            &quot;The battle %s has been cancelled, %s declined the battle&quot;;
+    public static final String YOU_DECLINED_BATTLE_INVITE = &quot;You declined the battle invite&quot;;
+    public static final String OHTER_PARTY_DECLINED_BATTLE_INVITE =
+            &quot;%s has declined the battle invite&quot;;
+
+    @Inject BattleController battleController;
+    @Inject BattleMessageUtil battleMessageUtil;
+
+    @Inject
+<span class="fc" id="L30">    public BattleButtonClickHandleDecline() {}</span>
+
+    /**
+     * Gets the battle button click handler name.
+     *
+     * @return name - the name of the battle button click handler
+     */
+    @Override
+    public String getName() {
+<span class="fc" id="L39">        return DECLINE_BATTLE;</span>
+    }
+
+    /**
+     * Informs both users that the battle was declined and ensures cancellation of the battle
+     * between two users.
+     *
+     * @param event - a battle button click event
+     */
+    @ExcludeFromJacocoGeneratedReport
+    @Override
+    public void onButtonClick(ButtonClickEvent event) {
+        log.info(CLICKED_DECLINE_BUTTON, event.getUser().getName());
+        try {
+            Battle battle = battleController.cancelBattle(event.getUser().getId());
+            log.info(THE_BATTLE_HAS_BEEN_CANCELLED, battle, event.getUser().getName());
+            event.reply(YOU_DECLINED_BATTLE_INVITE).queue();
+            battleMessageUtil
+                    .sendDM(
+                            event.getJDA(),
+                            battle,
+                            battle.getFromUserId(),
+                            String.format(
+                                    OHTER_PARTY_DECLINED_BATTLE_INVITE,
+                                    event.getUser().getAsMention()))
+                    .queue();
+            battleMessageUtil.cleanupBattleMessages(event.getJDA(), battle);
+        } catch (BattleException e) {
+            event.reply(e.getMessage()).queue();
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

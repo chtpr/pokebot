@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BattleButtonClickHandleConfirm.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edu.northeastern.cs5500.starterbot</a> &gt; <a href="index.source.html" class="el_package">edu.northeastern.cs5500.starterbot.command</a> &gt; <span class="el_source">BattleButtonClickHandleConfirm.java</span></div><h1>BattleButtonClickHandleConfirm.java</h1><pre class="source lang-java linenums">package edu.northeastern.cs5500.starterbot.command;
+
+import edu.northeastern.cs5500.starterbot.annotation.ExcludeFromJacocoGeneratedReport;
+import edu.northeastern.cs5500.starterbot.controller.BattleController;
+import edu.northeastern.cs5500.starterbot.controller.PokemonController;
+import edu.northeastern.cs5500.starterbot.controller.UserInventoryController;
+import edu.northeastern.cs5500.starterbot.exception.BattleException;
+import edu.northeastern.cs5500.starterbot.exception.ForceCancelBattleException;
+import edu.northeastern.cs5500.starterbot.model.Battle;
+import edu.northeastern.cs5500.starterbot.utils.BattleMessageUtil;
+import edu.northeastern.cs5500.starterbot.utils.MessageUtil;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import lombok.extern.slf4j.Slf4j;
+import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
+
+/** BattleButtonClickHandleConfirm allows to process confirmance of the battle. */
+@Singleton
+<span class="fc" id="L19">@Slf4j</span>
+public class BattleButtonClickHandleConfirm implements ButtonClickHandler {
+
+    public static final String CONFIRM_BATTLE = &quot;confirm_battle&quot;;
+    public static final String THE_BATTLE_HAS_BEEN_EXECUTED = &quot;The battle has been executed. %s&quot;;
+    public static final String THE_BATTLE_ENDS_UP_AS_A_TIE =
+            &quot;The battle has been executed and end up as a tie!&quot;;
+    public static final String HAS_CONFIRMED_THE_BATTLE = &quot;%s has confirmed the battle.&quot;;
+    public static final String YOU_WIN = &quot;You win!&quot;;
+    public static final String YOU_LOSE = &quot;You lose.&quot;;
+    public static final String CLICKED_CONFIRM_BUTTON = &quot;%s clicked confirm button&quot;;
+    public static final String CONFIRMED_THE_BATTLE = &quot;You have confirmed the battle.&quot;;
+
+    @Inject BattleController battleController;
+    @Inject UserInventoryController userInventoryController;
+    @Inject PokemonController pokemonController;
+    @Inject BattleMessageUtil battleMessageUtil;
+
+    @Inject
+<span class="fc" id="L38">    public BattleButtonClickHandleConfirm() {}</span>
+
+    /**
+     * Gets the battle button click handler name.
+     *
+     * @return name - the name of the battle button click handler
+     */
+    @Override
+    public String getName() {
+<span class="fc" id="L47">        return CONFIRM_BATTLE;</span>
+    }
+
+    /**
+     * Creates a message which states the battle has been succesfully executed and who will win.
+     *
+     * @param battle pokemon that user will get as a result of battle
+     * @param winOrNotString win or lose
+     * @return a String message
+     */
+    String renderBattleConfirmationMessage(Battle battle, String winOrNotString) {
+<span class="fc" id="L58">        String winUserId = battle.getWinUserId();</span>
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">        if (winUserId != null) {</span>
+<span class="nc" id="L60">            return String.format(THE_BATTLE_HAS_BEEN_EXECUTED, winOrNotString);</span>
+        }
+<span class="fc" id="L62">        return String.format(THE_BATTLE_ENDS_UP_AS_A_TIE);</span>
+    }
+
+    /**
+     * Creates a message which informs one party that the other party has confirmed the battle.
+     *
+     * @param userAsMention a user that confirmed the battle offer
+     * @return a String message
+     * @throws BattleException
+     */
+    String renderOtherPartyConfirmedMessage(String userAsMention) throws BattleException {
+<span class="fc" id="L73">        return String.format(HAS_CONFIRMED_THE_BATTLE, userAsMention);</span>
+    }
+
+    /**
+     * Sends battle confirmation message
+     *
+     * @param event a battle button click event
+     * @param battle current battle
+     * @throws BattleException
+     */
+    @ExcludeFromJacocoGeneratedReport
+    void sendBattleConfirmationMessages(ButtonClickEvent event, Battle battle)
+            throws BattleException {
+        Boolean isFromUserClosing = event.getUser().getId().equals(battle.getFromUserId());
+        Boolean isFromUserWin = event.getUser().getId().equals(battle.getWinUserId());
+        event.reply(renderBattleConfirmationMessage(battle, isFromUserWin ? YOU_WIN : YOU_LOSE))
+                .queue();
+        event.getJDA()
+                .retrieveUserById(isFromUserClosing ? battle.getToUserId() : battle.getFromUserId())
+                .queue(
+                        otherUser -&gt;
+<span class="nc" id="L94">                                MessageUtil.sendDirectMessage(</span>
+                                        otherUser,
+<span class="nc" id="L96">                                        renderBattleConfirmationMessage(</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">                                                battle, isFromUserWin ? YOU_LOSE : YOU_WIN),</span>
+                                        false,
+                                        0));
+    }
+
+    /**
+     * Informs user that the battle has been confirmed
+     *
+     * @param event a battle button click event
+     */
+    @Override
+    @ExcludeFromJacocoGeneratedReport
+    public void onButtonClick(ButtonClickEvent event) {
+        log.info(CLICKED_CONFIRM_BUTTON, event.getUser().getName());
+        try {
+            try {
+                Battle battle = battleController.acceptBattle(event.getUser().getId());
+                String otherUserId;
+                if (battle.getFromUserId().equals(event.getUser().getId())) {
+                    otherUserId = battle.getToUserId();
+                } else {
+                    otherUserId = battle.getFromUserId();
+                }
+
+                if (battle.getFromUserAccept() &amp;&amp; battle.getToUserAccept()) {
+                    battle = battleController.completeBattle(battle.getId());
+                    sendBattleConfirmationMessages(event, battle);
+                } else {
+                    event.reply(CONFIRMED_THE_BATTLE).queue();
+                    battleMessageUtil
+                            .sendDM(
+                                    event.getJDA(),
+                                    battle,
+                                    otherUserId,
+                                    renderOtherPartyConfirmedMessage(
+                                            event.getUser().getAsMention()))
+                            .queue();
+                }
+                event.getMessage().delete().queue();
+            } catch (ForceCancelBattleException e) {
+                Battle battle = battleController.cancelBattle(e.getFromUserId());
+                battleMessageUtil.cleanupBattleMessages(event.getJDA(), battle);
+                event.getJDA()
+                        .retrieveUserById(e.getFromUserId())
+                        .queue(
+                                user -&gt;
+<span class="nc" id="L143">                                        MessageUtil.sendDirectMessage(</span>
+<span class="nc" id="L144">                                                user, e.getMessageToFromUser(), false, 0));</span>
+                event.getJDA()
+                        .retrieveUserById(e.getToUserId())
+                        .queue(
+                                user -&gt;
+<span class="nc" id="L149">                                        MessageUtil.sendDirectMessage(</span>
+<span class="nc" id="L150">                                                user, e.getMessageToToUser(), false, 0));</span>
+                throw e;
+            }
+        } catch (BattleException battleException) {
+            event.reply(battleException.getMessage()).queue();
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

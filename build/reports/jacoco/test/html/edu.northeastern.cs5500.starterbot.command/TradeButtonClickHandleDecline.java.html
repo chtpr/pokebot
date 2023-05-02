@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TradeButtonClickHandleDecline.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edu.northeastern.cs5500.starterbot</a> &gt; <a href="index.source.html" class="el_package">edu.northeastern.cs5500.starterbot.command</a> &gt; <span class="el_source">TradeButtonClickHandleDecline.java</span></div><h1>TradeButtonClickHandleDecline.java</h1><pre class="source lang-java linenums">package edu.northeastern.cs5500.starterbot.command;
+
+import edu.northeastern.cs5500.starterbot.annotation.ExcludeFromJacocoGeneratedReport;
+import edu.northeastern.cs5500.starterbot.controller.TradeController;
+import edu.northeastern.cs5500.starterbot.exception.TradeException;
+import edu.northeastern.cs5500.starterbot.model.Trade;
+import edu.northeastern.cs5500.starterbot.utils.TradeMessageUtil;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import lombok.extern.slf4j.Slf4j;
+import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
+
+/** TradeButtonClickHandleDecline allows to process decline of the trade request. */
+@Singleton
+<span class="fc" id="L15">@Slf4j</span>
+public class TradeButtonClickHandleDecline implements ButtonClickHandler {
+    @Inject TradeController tradeController;
+    @Inject TradeMessageUtil msgUtil;
+
+    @Inject
+<span class="fc" id="L21">    public TradeButtonClickHandleDecline() {}</span>
+
+    /**
+     * Gets the trade button click handler name.
+     *
+     * @return name - the name of the trade button click handler
+     */
+    @Override
+    public String getName() {
+<span class="fc" id="L30">        return &quot;decline_trade&quot;;</span>
+    }
+
+    /**
+     * Informs both users that the trade was declined and ensures cancellation of the trade between
+     * two users.
+     *
+     * @param event - a trade button click event
+     */
+    @ExcludeFromJacocoGeneratedReport
+    @Override
+    public void onButtonClick(ButtonClickEvent event) {
+        log.info(&quot;{} clicked decline button&quot;, event.getUser().getName());
+        try {
+            Trade trade = tradeController.cancelTrade(event.getUser().getId());
+            log.info(
+                    &quot;The trade {} has been cancelled, {} declined the trade&quot;,
+                    trade.getId(),
+                    event.getUser().getName());
+            event.reply(&quot;You declined the trade request&quot;).queue();
+            msgUtil.sendDM(
+                            event.getJDA(),
+                            trade,
+                            trade.getUser1Id(),
+                            String.format(
+                                    &quot;%s has declined the trade request&quot;,
+                                    event.getUser().getAsMention()))
+                    .queue();
+            msgUtil.cleanupTradeMessages(event.getJDA(), trade);
+        } catch (TradeException e) {
+            event.reply(e.getMessage()).queue();
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

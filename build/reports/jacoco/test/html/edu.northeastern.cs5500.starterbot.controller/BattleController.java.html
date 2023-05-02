@@ -1,0 +1,480 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BattleController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edu.northeastern.cs5500.starterbot</a> &gt; <a href="index.source.html" class="el_package">edu.northeastern.cs5500.starterbot.controller</a> &gt; <span class="el_source">BattleController.java</span></div><h1>BattleController.java</h1><pre class="source lang-java linenums">package edu.northeastern.cs5500.starterbot.controller;
+
+import com.mongodb.lang.Nullable;
+import edu.northeastern.cs5500.starterbot.exception.BattleException;
+import edu.northeastern.cs5500.starterbot.exception.ForceCancelBattleException;
+import edu.northeastern.cs5500.starterbot.model.Battle;
+import edu.northeastern.cs5500.starterbot.model.Pokemon;
+import edu.northeastern.cs5500.starterbot.repository.GenericRepository;
+import java.util.ArrayList;
+import java.util.Random;
+import javax.annotation.Nonnull;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import lombok.extern.slf4j.Slf4j;
+import org.bson.types.ObjectId;
+
+/**
+ * BattleController is used to manage one-turned battle workflow. It includes create battle, get
+ * battle, accept battle, choose pokemon to battle, decline battle, cancel battle, complete battle,
+ * get winner from battle, and other helper methods.
+ */
+@Singleton
+<span class="fc" id="L23">@Slf4j</span>
+public class BattleController {
+
+    public static final String ATTEMPT_TO_COMPLETE_NO_CONFIRMED_BATTLE =
+            &quot;Attempt to complete a battle where not everybody has confirmed it&quot;;
+    public static final String ATTEMPT_TO_COMPLETE_MISSING_POKEMON_BATTLE =
+            &quot;Attempt to complete a battle where some pokemon are missing&quot;;
+    public static final String ATTEMPT_TO_COMPLETE_NOT_EXIST_BATTLE =
+            &quot;Attempt to complete a battle that does not exist&quot;;
+    public static final String CANCELLED_BATTLE = &quot;%s cancelled their battle&quot;;
+    public static final String FROM_USER_OFFERED_TO_BATTLE = &quot;%s (fromUser) offered to battle %s&quot;;
+    public static final String CHOSE_POKEMON_TO_BATTLE_MORE_THAN_ONCE =
+            &quot;%s chose pokemon on a battle more than once&quot;;
+    public static final String EXCEPTION_CANNOT_CHANGE_UPDATE_CHOICE_ON_A_BATTLE =
+            &quot;Cannot change/update choice on a battle&quot;;
+    public static final String OFFERED_POKEMON_TO_A_NOT_START_BATTLE =
+            &quot;%s offered pokemon on a battle which hasn't started yet&quot;;
+    public static final String EXCEPTION_THE_BATTLE_HASN_T_STARTED = &quot;The battle hasn't started.&quot;;
+    public static final String EXCEPTION_THIS_BATTLE_IS_NOT_ACTIVE = &quot;This battle is not active.&quot;;
+    public static final String OFFERED_POKEMON_TO_BATTLE_BUT_NO_BATTLE_EXISTS =
+            &quot;%s offered pokemon on a battle but no battle exists&quot;;
+    public static final String EXCEPTION_FRIEND_NO_POKEMONS_TO_BATTLE =
+            &quot;Your friend doesn't have any pokemons to battle&quot;;
+    public static final String EXCEPTION_NO_POKEMONS_TO_BATTLE =
+            &quot;You don't have any pokemons to battle&quot;;
+    public static final String USER_OFFERED_TO_BATTLE = &quot;%s (toUser) offered to battle %s&quot;;
+    public static final String THE_BATTLE_IS_NOT_ACTIVE = &quot;The battle is not active.&quot;;
+    public static final String FROM_USER_NO_LONGER_POSSESS_THEIR_POKEMON =
+            &quot;From user no longer possess their pokemon&quot;;
+    public static final String TO_USER_NO_LONGER_POSSESS_THEIR_POKEMON =
+            &quot;To user no longer possess their pokemon&quot;;
+    public static final String BATTLE_CANCELLED_BY_USER =
+            &quot;You no longer possess the pokemon you offered. The battle will be cancelled.&quot;;
+    public static final String BATTLE_CANCELLED_BY_OTHER_PARTY =
+            &quot;The other party no longer possess the pokemon they offered. The battle will be cancelled.&quot;;
+    public static final String EXCEPTION_NO_BATTLE_EXISTS =
+            &quot;Chose pokemon on a battle that doesn't exist&quot;;
+    public static final String EXCEPTION_CANNOT_BATTLE_YOURSELF =
+            &quot;You cannot battle with yourself!&quot;;
+    public static final String EXCEPTION_ALREADY_ACCEPTED_BATTLE =
+            &quot;You have already accepted battle&quot;;
+    public static final String LOG_ERROR_NO_BATTLE_EXISTS =
+            &quot;%s chooses pokemon to a battle to %s but no battle exists&quot;;
+    public static final String LOG_ERROR_ACCEPTED_BATTLE =
+            &quot;%s accepted the same battle more than once&quot;;
+    public static final String LOG_ERROR_DECLINE_A_NON_EXISTED_BATTLE =
+            &quot;%s tried to decline a battle to %s that does not exist&quot;;
+    public static final String LOG_INFO_DECLINED_A_BATTLE = &quot;%s declined a battle with %s&quot;;
+    public static final int ONE_HANDURD = 100;
+
+    GenericRepository&lt;Battle&gt; battleRepository;
+    PokemonController pokemonController;
+    UserInventoryController userInventoryController;
+
+    @Inject
+    public BattleController(
+            GenericRepository&lt;Battle&gt; battleRepository,
+            PokemonController pokemonController,
+<span class="fc" id="L81">            UserInventoryController userInventoryController) {</span>
+<span class="fc" id="L82">        this.battleRepository = battleRepository;</span>
+<span class="fc" id="L83">        this.pokemonController = pokemonController;</span>
+<span class="fc" id="L84">        this.userInventoryController = userInventoryController;</span>
+<span class="fc" id="L85">    }</span>
+
+    /**
+     * Created a battle between two users.
+     *
+     * @param fromUserId the user who started the fight
+     * @param toUserId the user who was challenged
+     * @return Battle
+     * @throws BattleException
+     */
+    @Nonnull
+    public Battle createBattle(String fromUserId, String toUserId) throws BattleException {
+<span class="fc bfc" id="L97" title="All 2 branches covered.">        if (fromUserId.equals(toUserId)) {</span>
+<span class="fc" id="L98">            throw new BattleException(EXCEPTION_CANNOT_BATTLE_YOURSELF);</span>
+        }
+
+<span class="fc" id="L101">        Battle existingBattle = getBattleWithTwoUsers(fromUserId, toUserId);</span>
+
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">        if (existingBattle != null) {</span>
+<span class="nc" id="L104">            return existingBattle;</span>
+        }
+
+<span class="fc" id="L107">        Battle newBattle = new Battle();</span>
+<span class="fc" id="L108">        newBattle.setFromUserId(fromUserId);</span>
+<span class="fc" id="L109">        newBattle.setToUserId(toUserId);</span>
+<span class="fc" id="L110">        newBattle.setAccepted(false);</span>
+<span class="fc" id="L111">        newBattle.setToUserConfirmedBattle(false);</span>
+
+<span class="fc" id="L113">        ArrayList&lt;ObjectId&gt; fromUserPokemonList = getUserPokemonList(fromUserId);</span>
+<span class="pc bpc" id="L114" title="2 of 4 branches missed.">        if (fromUserPokemonList == null || fromUserPokemonList.isEmpty()) {</span>
+<span class="nc" id="L115">            throw new BattleException(EXCEPTION_NO_POKEMONS_TO_BATTLE);</span>
+        } else {
+<span class="fc" id="L117">            newBattle.setFromUserPokemonList(fromUserPokemonList);</span>
+        }
+
+<span class="fc" id="L120">        ArrayList&lt;ObjectId&gt; toUserPokemonList = getUserPokemonList(toUserId);</span>
+<span class="pc bpc" id="L121" title="2 of 4 branches missed.">        if (toUserPokemonList == null || toUserPokemonList.isEmpty()) {</span>
+<span class="nc" id="L122">            throw new BattleException(EXCEPTION_FRIEND_NO_POKEMONS_TO_BATTLE);</span>
+        } else {
+<span class="fc" id="L124">            newBattle.setToUserPokemonList(toUserPokemonList);</span>
+        }
+
+<span class="fc" id="L127">        return battleRepository.add(newBattle);</span>
+    }
+
+    /**
+     * Gets user's pokemon list
+     *
+     * @param userId userId
+     * @return ArrayList&lt;ObjectId&gt; list of pokemonId
+     * @throws BattleException
+     */
+    private ArrayList&lt;ObjectId&gt; getUserPokemonList(String userId) throws BattleException {
+<span class="fc" id="L138">        return userInventoryController.getPartyForUser(userId);</span>
+    }
+
+    /**
+     * Get the active Battle object between these two users if it exists.
+     *
+     * @param fromUserId the user who started the fight
+     * @param toUserId the user who was challenged
+     * @return null if there is no acitve battle, otherwise a Battle object
+     */
+    @Nullable
+    public Battle getBattleWithTwoUsers(String fromUserId, String toUserId) {
+<span class="pc bpc" id="L150" title="1 of 2 branches missed.">        if (fromUserId.equals(toUserId)) { // cannot battle with yourself</span>
+<span class="nc" id="L151">            return null;</span>
+        }
+
+<span class="fc bfc" id="L154" title="All 2 branches covered.">        for (Battle battle : battleRepository.getAll()) {</span>
+<span class="pc bpc" id="L155" title="1 of 2 branches missed.">            if (battle.getFromUserId().equals(fromUserId)</span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">                    || battle.getToUserId().equals(fromUserId)) {</span>
+<span class="pc bpc" id="L157" title="1 of 2 branches missed.">                if (battle.getFromUserId().equals(toUserId)</span>
+<span class="pc bpc" id="L158" title="1 of 2 branches missed.">                        || battle.getToUserId().equals(toUserId)) {</span>
+<span class="fc" id="L159">                    return battle;</span>
+                }
+            }
+<span class="nc" id="L162">        }</span>
+
+<span class="fc" id="L164">        return null;</span>
+    }
+
+    /**
+     * Get the active Battle object between these two users if it exists.
+     *
+     * @param userId the user
+     * @return null if there is no acitve battle, otherwise a Battle object
+     */
+    @Nullable
+    public Battle getBattleWithOneUser(String userId) {
+<span class="fc bfc" id="L175" title="All 2 branches covered.">        for (Battle battle : battleRepository.getAll()) {</span>
+<span class="pc bpc" id="L176" title="1 of 4 branches missed.">            if (battle.getFromUserId().equals(userId) || battle.getToUserId().equals(userId)) {</span>
+<span class="fc" id="L177">                return battle;</span>
+            }
+<span class="nc" id="L179">        }</span>
+<span class="fc" id="L180">        return null;</span>
+    }
+
+    /**
+     * Gets all battles from battle repository
+     *
+     * @return ArrayList&lt;Battle&gt; list of battle
+     */
+    @Nullable
+    public ArrayList&lt;Battle&gt; getAllBattles() {
+<span class="fc" id="L190">        ArrayList&lt;Battle&gt; battles = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L191" title="All 2 branches covered.">        for (Battle battle : battleRepository.getAll()) {</span>
+<span class="fc" id="L192">            battles.add(battle);</span>
+<span class="fc" id="L193">        }</span>
+<span class="fc" id="L194">        return battles;</span>
+    }
+
+    /**
+     * Accept battle request
+     *
+     * @param acceptingUserId
+     * @return Battle
+     * @throws BattleException
+     */
+    public Battle acceptBattleRequest(String acceptingUserId) throws BattleException {
+<span class="fc" id="L205">        Battle existingBattle = getBattleWithOneUser(acceptingUserId);</span>
+<span class="fc bfc" id="L206" title="All 2 branches covered.">        if (existingBattle == null) {</span>
+<span class="fc" id="L207">            log.error(LOG_ERROR_NO_BATTLE_EXISTS, acceptingUserId, acceptingUserId);</span>
+<span class="fc" id="L208">            throw new BattleException(EXCEPTION_NO_BATTLE_EXISTS);</span>
+        }
+<span class="pc bpc" id="L210" title="1 of 2 branches missed.">        if (!existingBattle.getToUserId().equals(acceptingUserId)) {</span>
+<span class="nc" id="L211">            log.error(LOG_ERROR_ACCEPTED_BATTLE, acceptingUserId);</span>
+<span class="nc" id="L212">            throw new BattleException(EXCEPTION_ALREADY_ACCEPTED_BATTLE);</span>
+        }
+<span class="fc" id="L214">        existingBattle.setToUserConfirmedBattle(true);</span>
+<span class="fc" id="L215">        Battle updatedBattle = battleRepository.update(existingBattle);</span>
+<span class="fc" id="L216">        return updatedBattle;</span>
+    }
+
+    /**
+     * Accepted a battle between these two users if it does not exist.
+     *
+     * @param acceptingUserId the user that accepted a battle
+     * @return Battle
+     * @throws BattleException
+     */
+    @Nonnull
+    public Battle acceptBattle(String acceptingUserId) throws BattleException {
+
+<span class="fc" id="L229">        Battle existingBattle = getBattleWithOneUser(acceptingUserId);</span>
+
+<span class="fc bfc" id="L231" title="All 2 branches covered.">        if (existingBattle == null) {</span>
+<span class="fc" id="L232">            log.error(LOG_ERROR_NO_BATTLE_EXISTS, acceptingUserId, acceptingUserId);</span>
+<span class="fc" id="L233">            throw new BattleException(EXCEPTION_NO_BATTLE_EXISTS);</span>
+        }
+
+<span class="fc bfc" id="L236" title="All 2 branches covered.">        if (existingBattle.getFromUserId().equals(acceptingUserId)) {</span>
+<span class="fc" id="L237">            Boolean accepted = existingBattle.getFromUserAccept();</span>
+<span class="pc bpc" id="L238" title="1 of 2 branches missed.">            if (accepted) {</span>
+<span class="fc" id="L239">                log.error(LOG_ERROR_ACCEPTED_BATTLE, acceptingUserId);</span>
+<span class="fc" id="L240">                throw new BattleException(EXCEPTION_ALREADY_ACCEPTED_BATTLE);</span>
+            }
+<span class="nc" id="L242">            existingBattle.setFromUserAccept(true);</span>
+<span class="pc bpc" id="L243" title="1 of 2 branches missed.">        } else if (existingBattle.getToUserId().equals(acceptingUserId)) {</span>
+<span class="fc" id="L244">            Boolean accepted = existingBattle.getToUserAccept();</span>
+<span class="fc bfc" id="L245" title="All 2 branches covered.">            if (accepted) {</span>
+<span class="fc" id="L246">                log.error(LOG_ERROR_ACCEPTED_BATTLE, acceptingUserId);</span>
+<span class="fc" id="L247">                throw new BattleException(EXCEPTION_ALREADY_ACCEPTED_BATTLE);</span>
+            }
+<span class="fc" id="L249">            existingBattle.setToUserAccept(true);</span>
+        }
+
+<span class="fc" id="L252">        battleRepository.update(existingBattle);</span>
+<span class="fc" id="L253">        return existingBattle;</span>
+    }
+
+    /**
+     * Choose a pokemon to battle
+     *
+     * @param userId userId
+     * @param pokemonToBattle the pokemon to battle
+     * @return Battle
+     * @throws BattleException
+     */
+    @Nonnull
+    public Battle choosePokemonToBattle(String userId, ObjectId pokemonToBattle)
+            throws BattleException {
+<span class="fc" id="L267">        Battle existingBattle = getBattleWithOneUser(userId);</span>
+
+<span class="fc bfc" id="L269" title="All 2 branches covered.">        if (existingBattle == null) {</span>
+<span class="fc" id="L270">            log.error(OFFERED_POKEMON_TO_BATTLE_BUT_NO_BATTLE_EXISTS, userId);</span>
+<span class="fc" id="L271">            throw new BattleException(EXCEPTION_THIS_BATTLE_IS_NOT_ACTIVE);</span>
+        }
+
+<span class="fc bfc" id="L274" title="All 2 branches covered.">        if (!existingBattle.getToUserConfirmedBattle()) {</span>
+<span class="fc" id="L275">            log.error(OFFERED_POKEMON_TO_A_NOT_START_BATTLE, userId);</span>
+<span class="fc" id="L276">            throw new BattleException(EXCEPTION_THE_BATTLE_HASN_T_STARTED);</span>
+        }
+
+<span class="pc bpc" id="L279" title="1 of 2 branches missed.">        if (existingBattle.getFromUserId().equals(userId)) {</span>
+<span class="fc" id="L280">            ObjectId existingPokemon = existingBattle.getFromUserActivePokemonId();</span>
+<span class="pc bpc" id="L281" title="1 of 2 branches missed.">            if (existingPokemon != null) {</span>
+<span class="nc" id="L282">                log.error(CHOSE_POKEMON_TO_BATTLE_MORE_THAN_ONCE, userId);</span>
+<span class="nc" id="L283">                throw new BattleException(EXCEPTION_CANNOT_CHANGE_UPDATE_CHOICE_ON_A_BATTLE);</span>
+            }
+<span class="fc" id="L285">            log.info(FROM_USER_OFFERED_TO_BATTLE, userId, pokemonToBattle);</span>
+<span class="fc" id="L286">            existingBattle.setFromUserActivePokemonId(pokemonToBattle);</span>
+<span class="fc" id="L287">        } else {</span>
+<span class="nc" id="L288">            ObjectId existingPokemon = existingBattle.getToUserActivePokemonId();</span>
+<span class="nc bnc" id="L289" title="All 2 branches missed.">            if (existingPokemon != null) {</span>
+<span class="nc" id="L290">                log.error(CHOSE_POKEMON_TO_BATTLE_MORE_THAN_ONCE, userId);</span>
+<span class="nc" id="L291">                throw new BattleException(EXCEPTION_CANNOT_CHANGE_UPDATE_CHOICE_ON_A_BATTLE);</span>
+            }
+<span class="nc" id="L293">            log.info(USER_OFFERED_TO_BATTLE, userId, pokemonToBattle);</span>
+<span class="nc" id="L294">            existingBattle.setToUserActivePokemonId(pokemonToBattle);</span>
+        }
+
+<span class="fc" id="L297">        battleRepository.update(existingBattle);</span>
+<span class="fc" id="L298">        return existingBattle;</span>
+    }
+
+    /**
+     * Declined the battle between these two users if it exists.
+     *
+     * @param decliningUserId the user that requested rejection
+     * @param otherBattlingUserId the other user in the battle
+     * @return ture if an active battle was sucessfully declined, flase otherwise
+     */
+    @Nonnull
+    public boolean declineBattle(String decliningUserId, String otherBattlingUserId) {
+
+<span class="nc" id="L311">        Battle existinBattle = getBattleWithTwoUsers(decliningUserId, otherBattlingUserId);</span>
+
+<span class="nc bnc" id="L313" title="All 2 branches missed.">        if (existinBattle == null) {</span>
+<span class="nc" id="L314">            log.error(LOG_ERROR_DECLINE_A_NON_EXISTED_BATTLE, decliningUserId, otherBattlingUserId);</span>
+<span class="nc" id="L315">            return false;</span>
+        }
+
+<span class="nc" id="L318">        log.info(LOG_INFO_DECLINED_A_BATTLE, decliningUserId, otherBattlingUserId);</span>
+<span class="nc" id="L319">        existinBattle.setFromUserAccept(false);</span>
+<span class="nc" id="L320">        existinBattle.setToUserAccept(false);</span>
+<span class="nc" id="L321">        battleRepository.delete(existinBattle.getId());</span>
+<span class="nc" id="L322">        return true;</span>
+    }
+
+    /**
+     * Cancelled the battle between these two users if it exists.
+     *
+     * @param cancellingUserId the user that requested cancellation
+     * @return Battle
+     * @throws BattleException
+     */
+    public Battle cancelBattle(String cancellingUserId) throws BattleException {
+<span class="fc" id="L333">        Battle existinBattle = getBattleWithOneUser(cancellingUserId);</span>
+
+<span class="fc bfc" id="L335" title="All 2 branches covered.">        if (existinBattle == null) {</span>
+<span class="fc" id="L336">            log.error(LOG_ERROR_DECLINE_A_NON_EXISTED_BATTLE, cancellingUserId);</span>
+<span class="fc" id="L337">            throw new BattleException(THE_BATTLE_IS_NOT_ACTIVE);</span>
+        }
+
+<span class="fc" id="L340">        log.info(CANCELLED_BATTLE, cancellingUserId);</span>
+<span class="fc" id="L341">        existinBattle.setFromUserAccept(false);</span>
+<span class="fc" id="L342">        existinBattle.setToUserAccept(false);</span>
+<span class="fc" id="L343">        battleRepository.delete(existinBattle.getId());</span>
+<span class="fc" id="L344">        return existinBattle;</span>
+    }
+
+    /**
+     * Completes the battle between two users.
+     *
+     * @param battleId an ID of the battle between two users
+     * @return completed battle
+     * @throws BattleException
+     */
+    public Battle completeBattle(ObjectId battleId) throws BattleException {
+<span class="fc" id="L355">        Battle battle = battleRepository.get(battleId);</span>
+<span class="fc bfc" id="L356" title="All 2 branches covered.">        if (battle == null) {</span>
+<span class="fc" id="L357">            log.error(ATTEMPT_TO_COMPLETE_NOT_EXIST_BATTLE);</span>
+<span class="fc" id="L358">            throw new BattleException(THE_BATTLE_IS_NOT_ACTIVE);</span>
+        }
+<span class="fc" id="L360">        ObjectId fromUserPokemonId = battle.getFromUserActivePokemonId();</span>
+<span class="fc" id="L361">        ObjectId toUserPokemonId = battle.getToUserActivePokemonId();</span>
+<span class="pc bpc" id="L362" title="1 of 4 branches missed.">        if (fromUserPokemonId == null || toUserPokemonId == null) {</span>
+<span class="fc" id="L363">            log.error(ATTEMPT_TO_COMPLETE_MISSING_POKEMON_BATTLE);</span>
+<span class="fc" id="L364">            throw new BattleException(THE_BATTLE_IS_NOT_ACTIVE);</span>
+        }
+<span class="pc bpc" id="L366" title="1 of 4 branches missed.">        if (!battle.getFromUserAccept() || !battle.getToUserAccept()) {</span>
+<span class="fc" id="L367">            log.error(ATTEMPT_TO_COMPLETE_NO_CONFIRMED_BATTLE);</span>
+<span class="fc" id="L368">            throw new BattleException(THE_BATTLE_IS_NOT_ACTIVE);</span>
+        }
+<span class="fc" id="L370">        ArrayList&lt;ObjectId&gt; fromUserParty =</span>
+<span class="fc" id="L371">                userInventoryController.getPartyForUser(battle.getFromUserId());</span>
+<span class="fc" id="L372">        ArrayList&lt;ObjectId&gt; toUserParty =</span>
+<span class="fc" id="L373">                userInventoryController.getPartyForUser(battle.getToUserId());</span>
+<span class="fc bfc" id="L374" title="All 2 branches covered.">        if (!fromUserParty.contains(fromUserPokemonId)) {</span>
+<span class="fc" id="L375">            log.error(FROM_USER_NO_LONGER_POSSESS_THEIR_POKEMON);</span>
+<span class="fc" id="L376">            throw new ForceCancelBattleException(</span>
+<span class="fc" id="L377">                    battle.getFromUserId(),</span>
+<span class="fc" id="L378">                    battle.getToUserId(),</span>
+                    BATTLE_CANCELLED_BY_USER,
+                    BATTLE_CANCELLED_BY_OTHER_PARTY);
+        }
+<span class="fc bfc" id="L382" title="All 2 branches covered.">        if (!toUserParty.contains(toUserPokemonId)) {</span>
+<span class="fc" id="L383">            log.error(TO_USER_NO_LONGER_POSSESS_THEIR_POKEMON);</span>
+<span class="fc" id="L384">            throw new ForceCancelBattleException(</span>
+<span class="fc" id="L385">                    battle.getToUserId(),</span>
+<span class="fc" id="L386">                    battle.getFromUserId(),</span>
+                    BATTLE_CANCELLED_BY_USER,
+                    BATTLE_CANCELLED_BY_OTHER_PARTY);
+        }
+
+<span class="fc" id="L391">        Pokemon fromUserPokemon = pokemonController.getPokemonById(fromUserPokemonId);</span>
+<span class="fc" id="L392">        Pokemon toUserPokemon = pokemonController.getPokemonById(toUserPokemonId);</span>
+
+<span class="fc" id="L394">        String winUserId =</span>
+<span class="fc" id="L395">                getBattleWinnerByRandomlyBaseStats(battle, fromUserPokemon, toUserPokemon);</span>
+<span class="pc bpc" id="L396" title="1 of 2 branches missed.">        if (winUserId != null) {</span>
+<span class="nc" id="L397">            battle.setWinUserId(winUserId);</span>
+<span class="nc bnc" id="L398" title="All 2 branches missed.">            if (winUserId.equals(battle.getFromUserId())) {</span>
+<span class="nc" id="L399">                toUserParty.remove(toUserPokemonId);</span>
+<span class="nc bnc" id="L400" title="All 2 branches missed.">            } else if (winUserId.equals(battle.getToUserId())) {</span>
+<span class="nc" id="L401">                fromUserParty.remove(fromUserPokemonId);</span>
+            }
+        }
+<span class="fc" id="L404">        userInventoryController.setPartyForUser(battle.getFromUserId(), fromUserParty);</span>
+<span class="fc" id="L405">        userInventoryController.setPartyForUser(battle.getToUserId(), toUserParty);</span>
+<span class="fc" id="L406">        battleRepository.delete(battleId);</span>
+<span class="fc" id="L407">        return battle;</span>
+    }
+
+    /**
+     * Gets winner from a battle based on random health, attack, and speed
+     *
+     * @param battle battle
+     * @param fromUserPokemon from user's pokemon
+     * @param toUserPokemon to user's pokemon
+     * @return String winner user id
+     * @throws BattleException
+     */
+    private String getBattleWinnerByRandomlyBaseStats(
+            Battle battle, Pokemon fromUserPokemon, Pokemon toUserPokemon) throws BattleException {
+<span class="fc" id="L421">        String winUserId = null;</span>
+
+<span class="fc" id="L423">        String fromUserId = battle.getFromUserId();</span>
+<span class="fc" id="L424">        String toUserId = battle.getToUserId();</span>
+<span class="fc" id="L425">        Battle existingBattle = getBattleWithTwoUsers(fromUserId, toUserId);</span>
+
+<span class="pc bpc" id="L427" title="1 of 2 branches missed.">        if (existingBattle == null) {</span>
+<span class="nc" id="L428">            log.error(LOG_ERROR_NO_BATTLE_EXISTS, fromUserId, toUserId);</span>
+<span class="nc" id="L429">            throw new BattleException(EXCEPTION_NO_BATTLE_EXISTS);</span>
+        }
+
+<span class="fc" id="L432">        Random random = new Random();</span>
+<span class="fc" id="L433">        Integer fromUserPokemonSpeed = random.nextInt(ONE_HANDURD);</span>
+<span class="fc" id="L434">        Integer toUserPokemonSpeed = random.nextInt(ONE_HANDURD);</span>
+<span class="fc" id="L435">        Integer fromUserPokemonHealth = random.nextInt(ONE_HANDURD);</span>
+<span class="fc" id="L436">        Integer toUserPokemonHealth = random.nextInt(ONE_HANDURD);</span>
+<span class="fc" id="L437">        Integer fromUserPokemonAttack = random.nextInt(ONE_HANDURD);</span>
+<span class="fc" id="L438">        Integer toUserPokemonAttack = random.nextInt(ONE_HANDURD);</span>
+
+<span class="pc bpc" id="L440" title="1 of 2 branches missed.">        if (fromUserPokemonSpeed &gt;= toUserPokemonSpeed) {</span>
+<span class="nc" id="L441">            toUserPokemonHealth -= fromUserPokemonAttack;</span>
+<span class="nc bnc" id="L442" title="All 2 branches missed.">            if (toUserPokemonHealth &lt;= 0) {</span>
+<span class="nc" id="L443">                winUserId = fromUserId;</span>
+            }
+        } else {
+<span class="fc" id="L446">            fromUserPokemonHealth -= toUserPokemonAttack;</span>
+<span class="pc bpc" id="L447" title="1 of 2 branches missed.">            if (fromUserPokemonHealth &lt;= 0) {</span>
+<span class="nc" id="L448">                winUserId = toUserId;</span>
+            }
+        }
+<span class="fc" id="L451">        return winUserId;</span>
+    }
+
+    /**
+     * Stores ID of Message that is pending.
+     *
+     * @param battle current battle
+     * @param messageId message id that needs to be stored
+     */
+    public void addPendingMessageId(ObjectId battleId, String messageId) {
+<span class="nc" id="L461">        Battle battle = battleRepository.get(battleId);</span>
+<span class="nc bnc" id="L462" title="All 2 branches missed.">        if (battle.getPendingMessageIds().add(messageId)) {</span>
+<span class="nc" id="L463">            battleRepository.update(battle);</span>
+        }
+<span class="nc" id="L465">    }</span>
+
+    /**
+     * Removes ID of Message that is pending.
+     *
+     * @param battle current battle
+     * @param messageId message id that needs to be removed
+     */
+    public void removePendingMessageId(ObjectId battleId, String messageId) {
+<span class="nc" id="L474">        Battle battle = battleRepository.get(battleId);</span>
+<span class="nc bnc" id="L475" title="All 2 branches missed.">        if (battle.getPendingMessageIds().remove(messageId)) {</span>
+<span class="nc" id="L476">            battleRepository.update(battle);</span>
+        }
+<span class="nc" id="L478">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

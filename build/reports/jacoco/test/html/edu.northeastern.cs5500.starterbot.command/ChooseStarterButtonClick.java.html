@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ChooseStarterButtonClick.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edu.northeastern.cs5500.starterbot</a> &gt; <a href="index.source.html" class="el_package">edu.northeastern.cs5500.starterbot.command</a> &gt; <span class="el_source">ChooseStarterButtonClick.java</span></div><h1>ChooseStarterButtonClick.java</h1><pre class="source lang-java linenums">package edu.northeastern.cs5500.starterbot.command;
+
+import edu.northeastern.cs5500.starterbot.annotation.ExcludeFromJacocoGeneratedReport;
+import edu.northeastern.cs5500.starterbot.controller.PokemonController;
+import edu.northeastern.cs5500.starterbot.controller.UserInventoryController;
+import edu.northeastern.cs5500.starterbot.exception.InvalidPokedexNumberException;
+import edu.northeastern.cs5500.starterbot.exception.UnauthorizedPokemonSelectionException;
+import edu.northeastern.cs5500.starterbot.model.Pokemon;
+import edu.northeastern.cs5500.starterbot.utils.MessageUtil;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import lombok.extern.slf4j.Slf4j;
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.MessageBuilder;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
+
+/** ChooseStarterButtonClick sets and confirms the starter pokemon a user has chosen. */
+@Singleton
+<span class="fc" id="L21">@Slf4j</span>
+public class ChooseStarterButtonClick implements ButtonClickHandler {
+
+<span class="fc" id="L24">    BeginPlayingCommand beginPlayingCommand = new BeginPlayingCommand();</span>
+
+    private static final String BULBASAUR_NAME_LOWER = &quot;bulbasaur&quot;;
+    private static final String CHARMANDER_NAME_LOWER = &quot;charmander&quot;;
+    private static final String SQUIRTLE_NAME_LOWER = &quot;squirtle&quot;;
+
+    private static final String CHOOSE_BULBASAUR_IMAGE =
+            &quot;https://static.wikia.nocookie.net/legendsofthemultiuniverse/images/4/4c/001_bulbasaur_by_pklucario-d5z1g10.png/revision/latest?cb=20170701131534&quot;;
+    private static final String CHOOSE_CHARMANDER_IMAGE =
+            &quot;https://seeklogo.com/images/C/charmander-logo-AC289C2CDD-seeklogo.com.png&quot;;
+    private static final String CHOOSE_SQUIRTLE_IMAGE =
+            &quot;https://i.pinimg.com/originals/1b/47/3a/1b473a97ded04ac7c5b85eaf2baa5441.png&quot;;
+
+    private static final String CHOOSE_BULBASAUR_EMOJI = &quot;\ud83c\udf31&quot;;
+    private static final String CHOOSE_CHARMANDER_EMOJI = &quot;\ud83d\udd25&quot;;
+    private static final String CHOOSE_SQUIRTLE_EMOJI = &quot;\ud83d\udca6&quot;;
+    private static final String SPARKLE_EMOJI = &quot;\u2728&quot;;
+
+    // This allows for a more natural messaging experience
+    static final int POKEMON_ADDED_TO_PARTY_MESSAGE_DELAY = 1;
+
+    private UserInventoryController userInventoryController;
+    private PokemonController pokemonController;
+
+    @Inject
+    public ChooseStarterButtonClick(
+<span class="fc" id="L50">            UserInventoryController userInventoryController, PokemonController pokemonController) {</span>
+<span class="fc" id="L51">        this.userInventoryController = userInventoryController;</span>
+<span class="fc" id="L52">        this.pokemonController = pokemonController;</span>
+<span class="fc" id="L53">    }</span>
+
+    /**
+     * Gets the button click handler name.
+     *
+     * @return name - the name of the button click handler
+     */
+    @Override
+    public String getName() {
+<span class="nc" id="L62">        return &quot;choose-starter&quot;;</span>
+    }
+
+    /**
+     * Sets pokemon chosen by the user and executes a direct message confirmation.
+     *
+     * @param event - a ButtonClickEvent, expected to be a &quot;choose starter&quot; button click
+     */
+    @Override
+    @ExcludeFromJacocoGeneratedReport
+    public void onButtonClick(ButtonClickEvent event) {
+        String discordUserId = event.getUser().getId();
+        String chosenPokemonNumber = event.getButton().getId().split(&quot;:&quot;, 2)[1];
+        log.info(
+                String.format(
+                        &quot;Button click event: User with id %s chose %s!&quot;,
+                        discordUserId, event.getButton().getLabel()));
+
+        String pokemonName = &quot;&quot;;
+        try {
+            pokemonName =
+                    chooseStarterPokemon(discordUserId, Integer.parseInt(chosenPokemonNumber));
+        } catch (UnauthorizedPokemonSelectionException e) {
+            event.reply(&quot;Oops! You've already chosen a starter pokemon.&quot;).queue();
+            return;
+        }
+
+        sendMessages(event, pokemonName);
+    }
+
+    /**
+     * Executes the retrieval and addition of a starter pokemon to the user's party.
+     *
+     * @param discordUserId - the id of the discord user who initiated the button click event
+     * @param pokemonNumber - the pokedex number of the chosen starter pokemon
+     * @return a string representing the name of the chosen starter pokemon
+     * @throws UnauthorizedPokemonSelectionException
+     */
+    String chooseStarterPokemon(String discordUserId, int pokemonNumber)
+            throws UnauthorizedPokemonSelectionException {
+
+        // Check if user is allowed to choose a starter
+<span class="fc bfc" id="L104" title="All 2 branches covered.">        if (!(userInventoryController.getPartyForUser(discordUserId).isEmpty())) {</span>
+<span class="fc" id="L105">            throw new UnauthorizedPokemonSelectionException(discordUserId);</span>
+        }
+
+        // Create pokemon
+<span class="fc" id="L109">        log.info(String.format(&quot;Getting pokemon number {} from database&quot;, pokemonNumber));</span>
+<span class="fc" id="L110">        Pokemon chosenStarterPokemon = pokemonController.newPokemonFromNumber(pokemonNumber);</span>
+<span class="pc bpc" id="L111" title="1 of 2 branches missed.">        if (chosenStarterPokemon == null) {</span>
+<span class="nc" id="L112">            log.error(&quot;Unknown pokemon number chosen for starter: '{}'&quot;, pokemonNumber);</span>
+            // This is a runtime exception as it indicates a programming error occurred (source:
+            // https://stackoverflow.com/a/499534/18546128)
+<span class="nc" id="L115">            throw new InvalidPokedexNumberException(pokemonNumber);</span>
+        }
+
+        // Add pokemon to user's inventory
+<span class="fc" id="L119">        userInventoryController.addPokemonToUserParty(discordUserId, chosenStarterPokemon);</span>
+<span class="fc" id="L120">        log.info(</span>
+<span class="fc" id="L121">                String.format(</span>
+                        &quot;Adding pokemon %s to user's party with user id: %s&quot;,
+<span class="fc" id="L123">                        chosenStarterPokemon.getName(), discordUserId));</span>
+
+<span class="fc" id="L125">        return chosenStarterPokemon.getName();</span>
+    }
+
+    /**
+     * Sends the necessary messages to a new user after a starter pokemon is chosen, including a
+     * confirmation and next steps.
+     *
+     * @param pokemonName - the name of the chosen pokemon
+     * @param event - the ButtonClickEvent
+     */
+    @ExcludeFromJacocoGeneratedReport
+    void sendMessages(ButtonClickEvent event, String pokemonName) {
+        // Reply with messages confirming pokemon chosen
+        event.reply(generateStarterChosenConfirmationMessage(pokemonName)).queue();
+        MessageUtil.sendDirectMessage(
+                event.getUser(),
+                generatePokemonAddedConfirmationMessage(pokemonName),
+                false,
+                POKEMON_ADDED_TO_PARTY_MESSAGE_DELAY);
+
+        // Send playing instructions
+        beginPlayingCommand.sendBeginPlayingInstructionMessage(
+                event.getUser(), POKEMON_ADDED_TO_PARTY_MESSAGE_DELAY);
+    }
+
+    /**
+     * Generates a message confirming the starter pokemon chosen.
+     *
+     * @param pokemonName - the name of the chosen pokemon
+     * @return a confirmation Message to be sent
+     */
+    Message generateStarterChosenConfirmationMessage(String pokemonName) {
+<span class="fc" id="L157">        MessageBuilder messageBuilder = new MessageBuilder();</span>
+
+<span class="fc" id="L159">        String imageUrl = &quot;&quot;;</span>
+<span class="fc" id="L160">        String emoji = &quot;&quot;;</span>
+
+<span class="pc bpc" id="L162" title="3 of 4 branches missed.">        switch (pokemonName.toLowerCase()) {</span>
+            case BULBASAUR_NAME_LOWER:
+<span class="nc" id="L164">                imageUrl = CHOOSE_BULBASAUR_IMAGE;</span>
+<span class="nc" id="L165">                emoji = CHOOSE_BULBASAUR_EMOJI;</span>
+<span class="nc" id="L166">                break;</span>
+            case CHARMANDER_NAME_LOWER:
+<span class="nc" id="L168">                imageUrl = CHOOSE_CHARMANDER_IMAGE;</span>
+<span class="nc" id="L169">                emoji = CHOOSE_CHARMANDER_EMOJI;</span>
+<span class="nc" id="L170">                break;</span>
+            case SQUIRTLE_NAME_LOWER:
+<span class="fc" id="L172">                imageUrl = CHOOSE_SQUIRTLE_IMAGE;</span>
+<span class="fc" id="L173">                emoji = CHOOSE_SQUIRTLE_EMOJI;</span>
+<span class="fc" id="L174">                break;</span>
+            default:
+<span class="nc" id="L176">                log.error(&quot;An unexpected starter pokemon name was given: %s&quot;, pokemonName);</span>
+<span class="nc" id="L177">                return messageBuilder.setContent(&quot;&quot;).build();</span>
+        }
+
+<span class="fc" id="L180">        String description =</span>
+<span class="fc" id="L181">                String.format(</span>
+                        &quot;%s%s You'll start your journey with %s! %s%s&quot;,
+                        SPARKLE_EMOJI, emoji, pokemonName, SPARKLE_EMOJI, emoji);
+<span class="fc" id="L184">        MessageEmbed embed =</span>
+<span class="fc" id="L185">                new EmbedBuilder().setDescription(description).setImage(imageUrl).build();</span>
+
+<span class="fc" id="L187">        return messageBuilder.setEmbeds(embed).build();</span>
+    }
+
+    /**
+     * Generates a message telling the user a pokemon has been added to their party.
+     *
+     * @param pokemonName - the name of the pokemon that was added to the party
+     */
+    Message generatePokemonAddedConfirmationMessage(String pokemonName) {
+<span class="fc" id="L196">        Message message =</span>
+                new MessageBuilder()
+<span class="fc" id="L198">                        .setContent(String.format(&quot;%s has been added to your party.&quot;, pokemonName))</span>
+<span class="fc" id="L199">                        .build();</span>
+<span class="fc" id="L200">        return message;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

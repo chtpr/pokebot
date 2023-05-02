@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MessageUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edu.northeastern.cs5500.starterbot</a> &gt; <a href="index.source.html" class="el_package">edu.northeastern.cs5500.starterbot.utils</a> &gt; <span class="el_source">MessageUtil.java</span></div><h1>MessageUtil.java</h1><pre class="source lang-java linenums">package edu.northeastern.cs5500.starterbot.utils;
+
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import net.dv8tion.jda.api.MessageBuilder;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.PrivateChannel;
+import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.requests.RestAction;
+import net.dv8tion.jda.api.requests.restaction.MessageAction;
+
+/** MessageUtil is a utility class that allows for ease in sending a message to a discord user. */
+<span class="nc" id="L14">public class MessageUtil {</span>
+
+    /**
+     * Sends a direct message to a user via a private channel.
+     *
+     * @param user - the user to be messaged
+     * @param message - the message to be sent
+     * @param sendTyping - a boolean which represents whether discord's &quot;X is typing...&quot; feature
+     *     should be displayed
+     * @param delay - the number of seconds that the message should be delayed before being sent
+     */
+    public static void sendDirectMessage(
+            User user, Message message, boolean sendTyping, int delay) {
+<span class="nc" id="L27">        sendDirectMessage(user, channel -&gt; channel.sendMessage(message), sendTyping, delay);</span>
+<span class="nc" id="L28">    }</span>
+
+    /**
+     * Sends a direct message embed to a user via a private channel.
+     *
+     * @param user - the user to be messaged
+     * @param embed - the message embed to be sent
+     * @param sendTyping - a boolean which represents whether discord's &quot;X is typing...&quot; feature
+     *     should be displayed
+     * @param delay - the number of seconds that the message embed should be delayed before being
+     *     sent
+     */
+    public static void sendDirectMessage(
+            User user, MessageEmbed embed, boolean sendTyping, int delay) {
+<span class="nc" id="L42">        sendDirectMessage(user, channel -&gt; channel.sendMessageEmbeds(embed), sendTyping, delay);</span>
+<span class="nc" id="L43">    }</span>
+
+    /**
+     * @param user - the user to be messaged
+     * @param messageString - the String message to be sent
+     * @param sendTyping - a boolean which represents whether discord's &quot;X is typing...&quot; feature
+     *     should be displayed
+     * @param delay - the number of seconds that the message embed should be delayed before being
+     *     sent
+     */
+    public static void sendDirectMessage(
+            User user, String messageString, boolean sendTyping, int delay) {
+<span class="nc" id="L55">        Message message = (new MessageBuilder()).setContent(messageString).build();</span>
+<span class="nc" id="L56">        sendDirectMessage(user, message, sendTyping, delay);</span>
+<span class="nc" id="L57">    }</span>
+
+    /**
+     * A helper function which executes the sending of a private message to a user.
+     *
+     * @param user - the user to be messaged
+     * @param sendMessage - the function that will be used to send the message
+     * @param sendTyping - a boolean which represents whether discord's &quot;X is typing...&quot; feature
+     *     should be displayed
+     * @param delay - the number of seconds that the message embed should be delayed before being
+     *     sent
+     */
+    private static void sendDirectMessage(
+            User user,
+            Function&lt;PrivateChannel, MessageAction&gt; sendMessage,
+            boolean sendTyping,
+            int delay) {
+
+<span class="nc" id="L75">        final RestAction&lt;PrivateChannel&gt; privateChannel = user.openPrivateChannel();</span>
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        if (sendTyping) privateChannel.flatMap(channel -&gt; channel.sendTyping()).queue();</span>
+
+<span class="nc" id="L78">        privateChannel.flatMap(sendMessage).queueAfter(Math.max(delay, 0), TimeUnit.SECONDS);</span>
+<span class="nc" id="L79">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

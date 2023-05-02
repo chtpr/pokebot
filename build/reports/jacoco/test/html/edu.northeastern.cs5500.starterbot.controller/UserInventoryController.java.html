@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserInventoryController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edu.northeastern.cs5500.starterbot</a> &gt; <a href="index.source.html" class="el_package">edu.northeastern.cs5500.starterbot.controller</a> &gt; <span class="el_source">UserInventoryController.java</span></div><h1>UserInventoryController.java</h1><pre class="source lang-java linenums">package edu.northeastern.cs5500.starterbot.controller;
+
+import edu.northeastern.cs5500.starterbot.model.Pokemon;
+import edu.northeastern.cs5500.starterbot.model.UserInventory;
+import edu.northeastern.cs5500.starterbot.repository.GenericRepository;
+import java.util.ArrayList;
+import java.util.Collection;
+import javax.annotation.Nonnull;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import lombok.extern.slf4j.Slf4j;
+import org.bson.types.ObjectId;
+
+/** Controls the behavior of the userInventory repo, and behaviors of the userInventories in it. */
+<span class="fc" id="L15">@Slf4j</span>
+@Singleton
+public class UserInventoryController {
+
+    private GenericRepository&lt;UserInventory&gt; userInventoryRepository;
+    @Inject PokemonController pokemonController;
+
+    @Inject
+<span class="fc" id="L23">    public UserInventoryController(GenericRepository&lt;UserInventory&gt; userInventoryRepository) {</span>
+<span class="fc" id="L24">        this.userInventoryRepository = userInventoryRepository;</span>
+<span class="fc" id="L25">    }</span>
+
+    /**
+     * Get inventory for a particular user by discordMemberId If the user doesn't have an existing
+     * inventory, create a new one for them The new inventory should have an empty party
+     *
+     * @param discordMemberId - the user's ID on discord
+     * @return the according inventory for the user
+     */
+    @Nonnull
+    public UserInventory getInventoryForMemberId(String discordMemberId) {
+<span class="fc" id="L36">        Collection&lt;UserInventory&gt; userInventories = userInventoryRepository.getAll();</span>
+<span class="fc bfc" id="L37" title="All 2 branches covered.">        for (UserInventory currentUserInventory : userInventories) {</span>
+<span class="fc bfc" id="L38" title="All 2 branches covered.">            if (currentUserInventory.getDiscordUserId().equals(discordMemberId)) {</span>
+<span class="fc" id="L39">                return currentUserInventory;</span>
+            }
+<span class="fc" id="L41">        }</span>
+
+<span class="fc" id="L43">        UserInventory userInventory = new UserInventory();</span>
+<span class="fc" id="L44">        userInventory.setDiscordUserId(discordMemberId);</span>
+<span class="fc" id="L45">        userInventory.setParty(new ArrayList&lt;ObjectId&gt;());</span>
+<span class="fc" id="L46">        userInventoryRepository.add(userInventory);</span>
+<span class="fc" id="L47">        return userInventory;</span>
+    }
+
+    /**
+     * Get the Pokemon party for a particular user by discordMemberId
+     *
+     * @param discordMemberId - the user ID on discord
+     * @return the Pokemon party for that user
+     */
+    @Nonnull
+    public ArrayList&lt;ObjectId&gt; getPartyForUser(String discordMemberId) {
+<span class="fc" id="L58">        return getInventoryForMemberId(discordMemberId).getParty();</span>
+    }
+
+    /**
+     * Set the Pokemon party for a particular user
+     *
+     * @param discordMemberId - the user ID on discord
+     * @param party - the new Pokemon party to be set
+     */
+    public void setPartyForUser(String discordMemberId, ArrayList&lt;ObjectId&gt; party) {
+<span class="fc" id="L68">        UserInventory userInventory = getInventoryForMemberId(discordMemberId);</span>
+<span class="fc" id="L69">        userInventory.setParty(party);</span>
+<span class="fc" id="L70">        userInventoryRepository.update(userInventory);</span>
+<span class="fc" id="L71">    }</span>
+
+    /**
+     * Adds a pokemon to the given user's party.
+     *
+     * &lt;p&gt;If attempting to add a duplicate pokemon (same ObjectId) it will be ignored.
+     *
+     * @param discordMemberId - the discord ID of the target member
+     * @param pokemon - the pokemon to be added to the party
+     */
+    public void addPokemonToUserParty(String discordMemberId, Pokemon pokemon) {
+<span class="fc" id="L82">        ArrayList&lt;ObjectId&gt; currentParty = getPartyForUser(discordMemberId);</span>
+
+<span class="fc" id="L84">        long duplicatePartyMemberIds =</span>
+<span class="fc" id="L85">                currentParty.stream()</span>
+<span class="fc" id="L86">                        .filter(partyMemberId -&gt; partyMemberId.equals(pokemon.getId()))</span>
+<span class="fc" id="L87">                        .count();</span>
+
+<span class="fc bfc" id="L89" title="All 2 branches covered.">        if (duplicatePartyMemberIds &gt; 0) {</span>
+<span class="fc" id="L90">            log.debug(&quot;Attempted to add duplicate pokemon with ObjectId: &quot; + pokemon.getId());</span>
+<span class="fc" id="L91">            return;</span>
+        }
+
+<span class="fc" id="L94">        currentParty.add(pokemon.getId());</span>
+<span class="fc" id="L95">        setPartyForUser(discordMemberId, currentParty);</span>
+<span class="fc" id="L96">    }</span>
+
+    /**
+     * Gets pokemons this user currently has
+     *
+     * @param userId id of the user
+     * @return list of pokemons
+     */
+    public ArrayList&lt;Pokemon&gt; getUserPokemons(String userId) {
+<span class="fc" id="L105">        ArrayList&lt;Pokemon&gt; result = new ArrayList&lt;&gt;();</span>
+<span class="pc bpc" id="L106" title="1 of 2 branches missed.">        for (ObjectId pokemonId : this.getPartyForUser(userId)) {</span>
+<span class="nc" id="L107">            result.add(pokemonController.getPokemonById(pokemonId));</span>
+<span class="nc" id="L108">        }</span>
+<span class="fc" id="L109">        return result;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CatchButtonClick.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edu.northeastern.cs5500.starterbot</a> &gt; <a href="index.source.html" class="el_package">edu.northeastern.cs5500.starterbot.command</a> &gt; <span class="el_source">CatchButtonClick.java</span></div><h1>CatchButtonClick.java</h1><pre class="source lang-java linenums">package edu.northeastern.cs5500.starterbot.command;
+
+import edu.northeastern.cs5500.starterbot.annotation.ExcludeFromJacocoGeneratedReport;
+import edu.northeastern.cs5500.starterbot.controller.PokemonController;
+import edu.northeastern.cs5500.starterbot.controller.UserInventoryController;
+import edu.northeastern.cs5500.starterbot.model.Pokemon;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import lombok.extern.slf4j.Slf4j;
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.MessageBuilder;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
+
+@Singleton
+<span class="fc" id="L17">@Slf4j</span>
+public class CatchButtonClick implements ButtonClickHandler {
+    @Inject UserInventoryController userInventoryController;
+    @Inject PokemonController pokemonController;
+
+    @Inject
+<span class="fc" id="L23">    public CatchButtonClick() {}</span>
+
+    /**
+     * Gets the button click handler name.
+     *
+     * @return name - the name of the button click handler
+     */
+    @Override
+    public String getName() {
+<span class="nc" id="L32">        return &quot;keep-release&quot;;</span>
+    }
+
+    /**
+     * Executes keeping or releasing the Pokemon. If kept, the Pokemon will be created and added to
+     * the user party. If released, a Pokemon is never created and the user will receive a message
+     * say they have released the Pokemon.
+     *
+     * @param event - a button click event, expected to be a &quot;keep or release&quot; button click
+     */
+    @ExcludeFromJacocoGeneratedReport
+    @Override
+    public void onButtonClick(ButtonClickEvent event) {
+        String discordUserId = event.getUser().getId();
+
+        String buttonLabel = event.getButton().getLabel();
+        String caughtPokemonNumber = event.getButton().getId().split(&quot;:&quot;, 2)[1];
+        log.info(
+                String.format(
+                        &quot;Button click event: User with id %s chose %s!&quot;,
+                        discordUserId, buttonLabel));
+
+        switch (buttonLabel) {
+            case CatchCommand.KEEP_BUTTON:
+                // Create pokemon
+                log.info(
+                        String.format(
+                                &quot;Getting pokemon number %s from database&quot;, caughtPokemonNumber));
+                Pokemon caughtPokemon =
+                        pokemonController.newPokemonFromNumber(
+                                Integer.parseInt(caughtPokemonNumber));
+                if (caughtPokemon == null) {
+                    log.error(&quot;Unknown pokemon number: '{}'&quot;, caughtPokemonNumber);
+                    event.reply(&quot;Sorry, due to a bug, that pokemon got away!&quot;).queue();
+                    return;
+                }
+                // Add pokemon to user's inventory
+                userInventoryController.addPokemonToUserParty(discordUserId, caughtPokemon);
+                log.info(
+                        String.format(
+                                &quot;Adding pokemon %s to user's party with user id: %s&quot;,
+                                caughtPokemon.getName(), discordUserId));
+
+                event.reply(pokemonJoinedPartyMessage(caughtPokemon)).queue();
+
+                break;
+            case CatchCommand.RELEASE_BUTTON:
+                event.reply(pokemonReleasedMessage()).queue();
+                break;
+            default:
+                log.error(&quot;Unknown button label on catch {}&quot;, buttonLabel);
+                event.reply(&quot;Sorry, an unexpected error occured.&quot;).queue();
+                break;
+        }
+    }
+
+    /**
+     * Generates a message telling the user a pokemon has been released.
+     *
+     * @return the message
+     */
+    Message pokemonReleasedMessage() {
+<span class="fc" id="L94">        Message message = new MessageBuilder().setContent(&quot;Pokemon has been released&quot;).build();</span>
+<span class="fc" id="L95">        return message;</span>
+    }
+
+    /**
+     * Generates a message telling the user a pokemon has joined their party.
+     *
+     * @param pokemon the pokemon
+     * @return the message
+     */
+    Message pokemonJoinedPartyMessage(Pokemon pokemon) {
+<span class="fc" id="L105">        EmbedBuilder embedBuilder = new EmbedBuilder();</span>
+<span class="fc" id="L106">        embedBuilder.setTitle(String.format(&quot;%s has joined your party!&quot;, pokemon.getName()));</span>
+<span class="fc" id="L107">        embedBuilder.addField(&quot;Type: &quot;, pokemon.getPokemonTypes().get(0), true);</span>
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">        if (pokemon.getPokemonTypes().size() &gt; 1) {</span>
+<span class="fc" id="L109">            embedBuilder.addField(&quot;Secondary Type: &quot;, pokemon.getPokemonTypes().get(1), true);</span>
+        }
+<span class="fc" id="L111">        embedBuilder.addField(&quot;Gender: &quot;, pokemon.getGender(), true);</span>
+<span class="fc" id="L112">        embedBuilder.addField(&quot;Level: &quot;, String.valueOf(pokemon.getLevel()), true);</span>
+<span class="fc" id="L113">        MessageEmbed embed = embedBuilder.build();</span>
+<span class="fc" id="L114">        MessageBuilder messageBuilder = new MessageBuilder();</span>
+<span class="fc" id="L115">        Message message = messageBuilder.setEmbeds(embed).build();</span>
+<span class="fc" id="L116">        return message;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

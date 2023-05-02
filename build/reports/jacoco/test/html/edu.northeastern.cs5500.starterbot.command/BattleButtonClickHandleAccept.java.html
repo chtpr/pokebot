@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BattleButtonClickHandleAccept.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edu.northeastern.cs5500.starterbot</a> &gt; <a href="index.source.html" class="el_package">edu.northeastern.cs5500.starterbot.command</a> &gt; <span class="el_source">BattleButtonClickHandleAccept.java</span></div><h1>BattleButtonClickHandleAccept.java</h1><pre class="source lang-java linenums">package edu.northeastern.cs5500.starterbot.command;
+
+import edu.northeastern.cs5500.starterbot.annotation.ExcludeFromJacocoGeneratedReport;
+import edu.northeastern.cs5500.starterbot.controller.BattleController;
+import edu.northeastern.cs5500.starterbot.controller.UserInventoryController;
+import edu.northeastern.cs5500.starterbot.exception.BattleException;
+import edu.northeastern.cs5500.starterbot.model.Battle;
+import edu.northeastern.cs5500.starterbot.model.Pokemon;
+import edu.northeastern.cs5500.starterbot.utils.BattleMessageUtil;
+import java.util.Collection;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import lombok.extern.slf4j.Slf4j;
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.MessageBuilder;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.Button;
+import net.dv8tion.jda.api.interactions.components.selections.SelectionMenu;
+
+/** BattleButtonClickHandleAccept allows to process acceptance of the battle invite. */
+@Singleton
+<span class="fc" id="L25">@Slf4j</span>
+public class BattleButtonClickHandleAccept implements ButtonClickHandler {
+
+    public static final String ACCEPT_BATTLE = &quot;accept_battle&quot;;
+    public static final String SELECT_POKEMON_DROPDOWN = &quot;select-pokemon-dropdown&quot;;
+    public static final String CLICKED_ACCEPT_BUTTON = &quot;%s clicked accept button&quot;;
+    public static final String CANCEL_BATTLE_LABLE = &quot;Cancel battle&quot;;
+    public static final String CANCEL_BATTLE_ID = &quot;cancel_battle&quot;;
+    public static final String INITIATE_THE_BATTLE = &quot;Initiating the battle...&quot;;
+    public static final String CHOOSE_POKEMON_TO_BATTLE = &quot;Choose your pokemon to battle&quot;;
+    public static final String CHOOSE_POKEMON_TO_BATTLE_TITLE =
+            &quot;Please choose your pokemon to battle&quot;;
+    public static final String NO_POKEMONS_TO_BATTLE =
+            &quot;Unable to start a battle, one of the parties doesn't have any pokemons in their inventory.&quot;;
+
+    @Inject BattleController battleController;
+    @Inject UserInventoryController userInventoryController;
+    @Inject BattleMessageUtil battleMessageUtil;
+
+    @Inject
+<span class="fc" id="L45">    public BattleButtonClickHandleAccept() {}</span>
+
+    /**
+     * Gets the battle button click handler name.
+     *
+     * @return name - the name of the battle button click handler
+     */
+    @Override
+    public String getName() {
+<span class="fc" id="L54">        return ACCEPT_BATTLE;</span>
+    }
+
+    /**
+     * Creates a message with selection menu of pokemons.
+     *
+     * @param userPokemons pokemons this user possesses
+     * @return message
+     * @throws BattleException
+     */
+    Message renderSelectionMessage(Collection&lt;Pokemon&gt; userPokemons) throws BattleException {
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        if (userPokemons.isEmpty()) {</span>
+<span class="fc" id="L66">            throw new BattleException(NO_POKEMONS_TO_BATTLE);</span>
+        }
+
+<span class="fc" id="L69">        EmbedBuilder embedBuilder = new EmbedBuilder();</span>
+<span class="fc" id="L70">        embedBuilder.setTitle(CHOOSE_POKEMON_TO_BATTLE_TITLE);</span>
+<span class="fc" id="L71">        MessageEmbed embed = embedBuilder.build();</span>
+<span class="fc" id="L72">        MessageBuilder messageBuilder = new MessageBuilder();</span>
+<span class="fc" id="L73">        SelectionMenu.Builder menuBuilder =</span>
+<span class="fc" id="L74">                SelectionMenu.create(SELECT_POKEMON_DROPDOWN)</span>
+<span class="fc" id="L75">                        .setPlaceholder(CHOOSE_POKEMON_TO_BATTLE);</span>
+
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        for (Pokemon pokemon : userPokemons) {</span>
+<span class="fc" id="L78">            String msg = String.format(&quot;battle:%s&quot;, pokemon.getId().toHexString());</span>
+<span class="fc" id="L79">            menuBuilder.addOption(pokemon.getName(), msg);</span>
+<span class="fc" id="L80">        }</span>
+
+<span class="fc" id="L82">        SelectionMenu menu = menuBuilder.build();</span>
+<span class="fc" id="L83">        return messageBuilder</span>
+<span class="fc" id="L84">                .setEmbeds(embed)</span>
+<span class="fc" id="L85">                .setActionRows(</span>
+<span class="fc" id="L86">                        ActionRow.of(menu),</span>
+<span class="fc" id="L87">                        ActionRow.of(Button.danger(CANCEL_BATTLE_ID, CANCEL_BATTLE_LABLE)))</span>
+<span class="fc" id="L88">                .build();</span>
+    }
+
+    /**
+     * Informs users that the battle begins and sends both users an embed with choose pokemon
+     * request
+     *
+     * @param event - a battle button click event
+     */
+    @ExcludeFromJacocoGeneratedReport
+    @Override
+    public void onButtonClick(ButtonClickEvent event) {
+        log.info(CLICKED_ACCEPT_BUTTON, event.getUser().getName());
+        try {
+            Battle battle = battleController.acceptBattleRequest(event.getUser().getId());
+            Message dm1 =
+                    renderSelectionMessage(
+                            userInventoryController.getUserPokemons(battle.getFromUserId()));
+            Message dm2 =
+                    renderSelectionMessage(
+                            userInventoryController.getUserPokemons(battle.getToUserId()));
+
+            event.reply(INITIATE_THE_BATTLE)
+                    .setEphemeral(true)
+                    .queue(
+                            _msg -&gt; {
+<span class="nc" id="L114">                                battleMessageUtil</span>
+<span class="nc" id="L115">                                        .sendDM(</span>
+<span class="nc" id="L116">                                                event.getJDA(), battle,</span>
+<span class="nc" id="L117">                                                battle.getFromUserId(), dm1)</span>
+<span class="nc" id="L118">                                        .queue();</span>
+<span class="nc" id="L119">                                battleMessageUtil</span>
+<span class="nc" id="L120">                                        .sendDM(</span>
+<span class="nc" id="L121">                                                event.getJDA(), battle,</span>
+<span class="nc" id="L122">                                                battle.getToUserId(), dm2)</span>
+<span class="nc" id="L123">                                        .queue();</span>
+<span class="nc" id="L124">                            });</span>
+
+            battleController.removePendingMessageId(battle.getId(), event.getMessage().getId());
+            event.getMessage().delete().queue();
+        } catch (BattleException e) {
+            event.reply(e.getMessage()).queue();
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

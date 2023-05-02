@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PokedexEntry.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edu.northeastern.cs5500.starterbot</a> &gt; <a href="index.source.html" class="el_package">edu.northeastern.cs5500.starterbot.model</a> &gt; <span class="el_source">PokedexEntry.java</span></div><h1>PokedexEntry.java</h1><pre class="source lang-java linenums">package edu.northeastern.cs5500.starterbot.model;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import lombok.Data;
+import org.bson.types.ObjectId;
+
+@Data
+/**
+ * Model for a Pokedex entry. Pokedex entries describe pokemon of a specific type; e.g. what
+ * percentage of Pikachu are female?
+ */
+public class PokedexEntry implements Model {
+<span class="fc" id="L15">    static final Double EVEN_GENDER_RATIO = 0.5;</span>
+
+    ObjectId id;
+
+    long pokedexNumber;
+    String name;
+    ArrayList&lt;String&gt; pokemonTypes;
+    Map&lt;String, Double&gt; genderRatio;
+    Map&lt;String, Integer&gt; baseStats;
+
+    /**
+     * Method to create and get the Pokemon image.
+     *
+     * @return the Pokemon image
+     */
+    public String getImage() {
+<span class="fc" id="L31">        return String.format(</span>
+<span class="fc" id="L32">                &quot;https://cdn.traction.one/pokedex/pokemon/%d.png&quot;, this.getPokedexNumber());</span>
+    }
+
+    /**
+     * If Showdown entry object has no gender ratio (meaning it's even) sets the gender ratio to
+     * even.
+     */
+    public void genderRatio() {
+<span class="fc" id="L40">        Map&lt;String, Double&gt; evenGenderRatio = new HashMap&lt;String, Double&gt;();</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">        if (this.genderRatio == null) {</span>
+<span class="fc" id="L42">            evenGenderRatio.put(&quot;M&quot;, EVEN_GENDER_RATIO);</span>
+<span class="fc" id="L43">            evenGenderRatio.put(&quot;F&quot;, EVEN_GENDER_RATIO);</span>
+<span class="fc" id="L44">            this.genderRatio = evenGenderRatio;</span>
+        }
+<span class="fc" id="L46">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

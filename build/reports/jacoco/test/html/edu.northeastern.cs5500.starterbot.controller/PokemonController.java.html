@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PokemonController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edu.northeastern.cs5500.starterbot</a> &gt; <a href="index.source.html" class="el_package">edu.northeastern.cs5500.starterbot.controller</a> &gt; <span class="el_source">PokemonController.java</span></div><h1>PokemonController.java</h1><pre class="source lang-java linenums">package edu.northeastern.cs5500.starterbot.controller;
+
+import edu.northeastern.cs5500.starterbot.model.PokedexEntry;
+import edu.northeastern.cs5500.starterbot.model.Pokemon;
+import edu.northeastern.cs5500.starterbot.repository.GenericRepository;
+import java.util.Map;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import lombok.extern.slf4j.Slf4j;
+import org.bson.types.ObjectId;
+
+/**
+ * PokemonController is used to create specific copies of Pokemon; e.g. generating a specific
+ * Pikachu when one is caught.
+ */
+@Singleton
+<span class="fc" id="L19">@Slf4j</span>
+public class PokemonController {
+    PokedexController pokedexController;
+    GenericRepository&lt;Pokemon&gt; pokemonRepository;
+
+    @Inject
+    public PokemonController(
+<span class="fc" id="L26">            GenericRepository&lt;Pokemon&gt; pokemonRepository, PokedexController pokedexController) {</span>
+<span class="fc" id="L27">        this.pokemonRepository = pokemonRepository;</span>
+<span class="fc" id="L28">        this.pokedexController = pokedexController;</span>
+<span class="fc" id="L29">        log.info(&quot;Created PokemonController&quot;);</span>
+<span class="fc" id="L30">    }</span>
+
+    /**
+     * Creates a Pokemon object from a Pokedex Entry object. Adds it to the Pokemon repository.
+     *
+     * @param pokedexEntry the Pokedex Entry object
+     * @return the corresponding Pokemon object
+     */
+    @Nonnull
+    public Pokemon createPokemon(PokedexEntry pokedexEntry) {
+<span class="pc bpc" id="L40" title="1 of 2 branches missed.">        if (pokedexEntry == null) {</span>
+<span class="nc" id="L41">            log.error(&quot;Logic error - cannot create a pokemon from a null pokedex entry&quot;);</span>
+<span class="nc" id="L42">            throw new RuntimeException(</span>
+                    &quot;Logic error - cannot create a pokemon from a null pokedex entry&quot;);
+        }
+<span class="fc" id="L45">        Pokemon pokemon = new Pokemon(pokedexEntry);</span>
+<span class="fc" id="L46">        pokemon.setGender(randomGender(pokedexEntry.getGenderRatio()));</span>
+<span class="fc" id="L47">        return pokemonRepository.add(pokemon);</span>
+    }
+
+    /**
+     * Returns a random gender for the Pokemon.
+     *
+     * @return a random gender
+     */
+    @Nonnull
+    String randomGender(Map&lt;String, Double&gt; genderRatio) {
+<span class="fc" id="L57">        Double maleRatio = genderRatio.get(&quot;M&quot;);</span>
+<span class="fc" id="L58">        Double randomNum = Math.random();</span>
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">        String gender = (randomNum &lt; maleRatio) ? &quot;Male&quot; : &quot;Female&quot;;</span>
+<span class="fc" id="L60">        return gender;</span>
+    }
+
+    /**
+     * Creates a Pokemon object when given its corresponding Pokedex number.
+     *
+     * @param pokemonNumber the Pokedex number
+     * @return the Pokemon object
+     */
+    @Nullable
+    public Pokemon newPokemonFromNumber(int pokemonNumber) {
+<span class="fc" id="L71">        PokedexEntry pokedexEntry = pokedexController.getPokemonWithNumber(pokemonNumber);</span>
+<span class="pc bpc" id="L72" title="1 of 2 branches missed.">        if (pokedexEntry == null) {</span>
+<span class="nc" id="L73">            log.warn(&quot;Tried to create a pokemon with an unknown number: {}&quot;, pokemonNumber);</span>
+<span class="nc" id="L74">            return null;</span>
+        }
+<span class="fc" id="L76">        return createPokemon(pokedexEntry);</span>
+    }
+
+    /**
+     * Gets a Pokemon by ObjectId.
+     *
+     * @param pokemonId the ObjectId of the Pokemon
+     * @return the Pokemon
+     */
+    @Nullable
+    public Pokemon getPokemonById(ObjectId pokemonId) {
+<span class="fc" id="L87">        return pokemonRepository.get(pokemonId);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

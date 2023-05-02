@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="edu.northeastern.cs5500.starterbot.command.DeletePokemonCommandTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2022-05-06T20:35:22" hostname="Christophers-MacBook-Pro.local" time="0.024">
+  <properties/>
+  <testcase name="testNameMatchesData()" classname="edu.northeastern.cs5500.starterbot.command.DeletePokemonCommandTest" time="0.003"/>
+  <testcase name="testCommandDataHasExpectedFields()" classname="edu.northeastern.cs5500.starterbot.command.DeletePokemonCommandTest" time="0.005"/>
+  <testcase name="validateIndexGivenIndexCannotBeZeroThrowsException()" classname="edu.northeastern.cs5500.starterbot.command.DeletePokemonCommandTest" time="0.001"/>
+  <testcase name="validateIndexGivenPreventsPartyFromBecomingEmptyThrowsException()" classname="edu.northeastern.cs5500.starterbot.command.DeletePokemonCommandTest" time="0.001"/>
+  <testcase name="validateIndexGivenIndexGreaterThanPartySizeThrowsException()" classname="edu.northeastern.cs5500.starterbot.command.DeletePokemonCommandTest" time="0.002"/>
+  <testcase name="testRemovePokemonFromParty()" classname="edu.northeastern.cs5500.starterbot.command.DeletePokemonCommandTest" time="0.004"/>
+  <testcase name="validateIndexGivenAllValidationChecksPass()" classname="edu.northeastern.cs5500.starterbot.command.DeletePokemonCommandTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[[Test worker] INFO edu.northeastern.cs5500.starterbot.service.PokemonShowdownService - Returned Pokedex from cache
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.PokedexController - created pokemon 'Bulbasaur'
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.PokedexController - created pokemon 'Charmander'
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.PokedexController - created pokemon 'Squirtle'
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.PokedexController - created pokemon 'Pikachu'
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.PokedexController - created pokemon 'Eevee'
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.PokedexController - created pokemon 'Vaporeon'
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.PokedexController - created pokemon 'Jolteon'
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.PokedexController - created pokemon 'Flareon'
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.PokedexController - created pokemon 'Mew'
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.PokedexController - created pokemon 'Espeon'
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.PokedexController - created pokemon 'Umbreon'
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.PokedexController - created pokemon 'Mightyena'
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.PokedexController - Created PokedexController
+[Test worker] ERROR edu.northeastern.cs5500.starterbot.command.DeletePokemonCommand - can't delete when only having 1 pokemon
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.PokemonController - Created PokemonController
+[Test worker] INFO edu.northeastern.cs5500.starterbot.command.DeletePokemonCommand - Deleting Pokemon with index 6275868aa088872208b58bf0 from user 350082976618512414
+]]></system-err>
+</testsuite>

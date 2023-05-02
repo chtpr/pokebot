@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PokemonShowdownService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edu.northeastern.cs5500.starterbot</a> &gt; <a href="index.source.html" class="el_package">edu.northeastern.cs5500.starterbot.service</a> &gt; <span class="el_source">PokemonShowdownService.java</span></div><h1>PokemonShowdownService.java</h1><pre class="source lang-java linenums">package edu.northeastern.cs5500.starterbot.service;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import javax.annotation.Nullable;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.http.ParseException;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
+
+@Singleton
+<span class="fc" id="L21">@Slf4j</span>
+public class PokemonShowdownService implements Service {
+    public static final String POKEMON_SHOWDOWN_POKEDEX_URI =
+            &quot;https://play.pokemonshowdown.com/data/pokedex.json&quot;;
+
+    // Fetching the entire pokedex is expensive so let's only do it once
+<span class="fc" id="L27">    static Map&lt;String, PokemonShowdownEntry&gt; pokedexCache = null;</span>
+
+    @Inject
+<span class="fc" id="L30">    public PokemonShowdownService() {}</span>
+
+    public void register() {
+<span class="nc" id="L33">        log.info(&quot;Registered PokemonShowdownService&quot;);</span>
+<span class="nc" id="L34">    }</span>
+
+    @Nullable
+    public Map&lt;String, PokemonShowdownEntry&gt; fetchPokedex() {
+<span class="fc bfc" id="L38" title="All 2 branches covered.">        if (pokedexCache != null) {</span>
+<span class="fc" id="L39">            log.info(&quot;Returned Pokedex from cache&quot;);</span>
+<span class="fc" id="L40">            return pokedexCache;</span>
+        }
+
+        try {
+<span class="fc" id="L44">            log.info(&quot;Downloading Pokedex&quot;);</span>
+<span class="fc" id="L45">            CloseableHttpClient client = HttpClientBuilder.create().build();</span>
+<span class="fc" id="L46">            CloseableHttpResponse response =</span>
+<span class="fc" id="L47">                    client.execute(new HttpGet(POKEMON_SHOWDOWN_POKEDEX_URI));</span>
+<span class="fc" id="L48">            String bodyAsString = EntityUtils.toString(response.getEntity());</span>
+
+<span class="fc" id="L50">            ObjectMapper mapper =</span>
+<span class="fc" id="L51">                    new ObjectMapper().enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);</span>
+<span class="fc" id="L52">            TypeReference&lt;HashMap&lt;String, PokemonShowdownEntry&gt;&gt; typeRef =</span>
+<span class="fc" id="L53">                    new TypeReference&lt;HashMap&lt;String, PokemonShowdownEntry&gt;&gt;() {};</span>
+<span class="fc" id="L54">            Map&lt;String, PokemonShowdownEntry&gt; pokedex = mapper.readValue(bodyAsString, typeRef);</span>
+
+<span class="fc" id="L56">            pokedexCache = pokedex;</span>
+<span class="fc" id="L57">            return pokedex;</span>
+<span class="nc" id="L58">        } catch (ParseException | IOException e) {</span>
+<span class="nc" id="L59">            log.error(&quot;Unable to get data from POKEMON_SHOWDOWN_POKEDEX_URI: {}&quot;, e);</span>
+        }
+<span class="nc" id="L61">        return null;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

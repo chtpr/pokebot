@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BeginPlayingCommand.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edu.northeastern.cs5500.starterbot</a> &gt; <a href="index.source.html" class="el_package">edu.northeastern.cs5500.starterbot.command</a> &gt; <span class="el_source">BeginPlayingCommand.java</span></div><h1>BeginPlayingCommand.java</h1><pre class="source lang-java linenums">package edu.northeastern.cs5500.starterbot.command;
+
+import edu.northeastern.cs5500.starterbot.annotation.ExcludeFromJacocoGeneratedReport;
+import edu.northeastern.cs5500.starterbot.utils.MessageUtil;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import lombok.extern.slf4j.Slf4j;
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.User;
+
+/**
+ * The begin playing command sends a direct message to a user, telling them how and where to start
+ * playing the game.
+ */
+@Singleton
+<span class="fc" id="L17">@Slf4j</span>
+public class BeginPlayingCommand {
+
+    private static final String BEGIN_PLAYING_IMAGE_URL =
+            &quot;https://c.tenor.com/rbx3ph5SLRUAAAAi/pikachu-pokemon.gif&quot;;
+
+    private static final String CONGRATS_EMOJI = &quot;\ud83c\udf89&quot;;
+
+    // This allows for a more natural messaging experience
+    static final int SEND_BEGIN_PLAYING_MESSAGE_DELAY = 2;
+
+    @Inject
+<span class="fc" id="L29">    public BeginPlayingCommand() {}</span>
+
+    MessageEmbed generateBeginPlayingEmbed() {
+<span class="fc" id="L32">        EmbedBuilder embedBuilder = new EmbedBuilder();</span>
+<span class="fc" id="L33">        embedBuilder.setTitle(&quot;Start Your Journey&quot;);</span>
+<span class="fc" id="L34">        embedBuilder.setDescription(</span>
+<span class="fc" id="L35">                String.format(</span>
+                        &quot;Congrats, Trainer! %s \n\nYou are now ready to begin catching, trading, and battling pokemon with other trainers in the server.\n\n Proceed to the '#play-game' channel to begin playing. \n\nNote: Once there, all actions can be accomplished by typing '/' in the message bar followed by one of the suggested commands shown.\n\n Good luck!&quot;,
+                        CONGRATS_EMOJI));
+<span class="fc" id="L38">        embedBuilder.setImage(BEGIN_PLAYING_IMAGE_URL);</span>
+<span class="fc" id="L39">        return embedBuilder.build();</span>
+    }
+
+    /**
+     * Executes a direct message to the user, instructing them on how and where to begin playing the
+     * game.
+     *
+     * @param discordUser - the new member to be sent the instruction message
+     * @param previousDelay - any previous delay that should be considered before queuing up the
+     *     next message
+     */
+    @ExcludeFromJacocoGeneratedReport
+    public void sendBeginPlayingInstructionMessage(User discordUser, int previousDelay) {
+        log.info(
+                String.format(
+                        &quot;Begin playing instructions sent to new member with user ID: %s&quot;,
+                        discordUser));
+        final int nextMessageDelay = previousDelay + SEND_BEGIN_PLAYING_MESSAGE_DELAY;
+        MessageUtil.sendDirectMessage(
+                discordUser, generateBeginPlayingEmbed(), false, nextMessageDelay);
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="edu.northeastern.cs5500.starterbot.controller.BattleControllerTest" tests="25" skipped="0" failures="0" errors="0" timestamp="2022-05-06T20:35:22" hostname="Christophers-MacBook-Pro.local" time="0.034">
+  <properties/>
+  <testcase name="testGetNotFoundBattle()" classname="edu.northeastern.cs5500.starterbot.controller.BattleControllerTest" time="0.001"/>
+  <testcase name="testCannotCompleteBattleFromUserPokemonMissing()" classname="edu.northeastern.cs5500.starterbot.controller.BattleControllerTest" time="0.001"/>
+  <testcase name="testChoosePokemonOnNotConfirmedBattle()" classname="edu.northeastern.cs5500.starterbot.controller.BattleControllerTest" time="0.002"/>
+  <testcase name="testFromUserAcceptsBattleAgain()" classname="edu.northeastern.cs5500.starterbot.controller.BattleControllerTest" time="0.001"/>
+  <testcase name="testCannotCompleteBattleUser2NoLongerHavePokemon()" classname="edu.northeastern.cs5500.starterbot.controller.BattleControllerTest" time="0.001"/>
+  <testcase name="testCannotBattleWithSelf()" classname="edu.northeastern.cs5500.starterbot.controller.BattleControllerTest" time="0.0"/>
+  <testcase name="testCannotCompleteBattleUser1NoLongerHavePokemon()" classname="edu.northeastern.cs5500.starterbot.controller.BattleControllerTest" time="0.002"/>
+  <testcase name="testCompleteBattleSuccess()" classname="edu.northeastern.cs5500.starterbot.controller.BattleControllerTest" time="0.001"/>
+  <testcase name="testCreateBattleSuccess()" classname="edu.northeastern.cs5500.starterbot.controller.BattleControllerTest" time="0.003"/>
+  <testcase name="testCannotCompleteBattleWhichNotExist()" classname="edu.northeastern.cs5500.starterbot.controller.BattleControllerTest" time="0.001"/>
+  <testcase name="testToUserAcceptsBattleAgain()" classname="edu.northeastern.cs5500.starterbot.controller.BattleControllerTest" time="0.002"/>
+  <testcase name="testCancelNotExistBattle()" classname="edu.northeastern.cs5500.starterbot.controller.BattleControllerTest" time="0.001"/>
+  <testcase name="testCannotBattleToUserGotNoParty()" classname="edu.northeastern.cs5500.starterbot.controller.BattleControllerTest" time="0.002"/>
+  <testcase name="testChoosePokemonOnNonexistBattle()" classname="edu.northeastern.cs5500.starterbot.controller.BattleControllerTest" time="0.0"/>
+  <testcase name="testCannotCompleteBattleMissingConfirmation()" classname="edu.northeastern.cs5500.starterbot.controller.BattleControllerTest" time="0.001"/>
+  <testcase name="testAcceptNonExistBattle()" classname="edu.northeastern.cs5500.starterbot.controller.BattleControllerTest" time="0.001"/>
+  <testcase name="testCancelBattleSuccess()" classname="edu.northeastern.cs5500.starterbot.controller.BattleControllerTest" time="0.0"/>
+  <testcase name="testSuccessfullyGetBattle1()" classname="edu.northeastern.cs5500.starterbot.controller.BattleControllerTest" time="0.0"/>
+  <testcase name="testSuccessfullyGetBattle2()" classname="edu.northeastern.cs5500.starterbot.controller.BattleControllerTest" time="0.0"/>
+  <testcase name="testCannotCompleteBattleToUserPokemonMissing()" classname="edu.northeastern.cs5500.starterbot.controller.BattleControllerTest" time="0.001"/>
+  <testcase name="testChoosePokemonToBattleSuccess()" classname="edu.northeastern.cs5500.starterbot.controller.BattleControllerTest" time="0.0"/>
+  <testcase name="testAcceptBattleRequestSuccess()" classname="edu.northeastern.cs5500.starterbot.controller.BattleControllerTest" time="0.0"/>
+  <testcase name="testCannotBattleFromUserGotNoParty()" classname="edu.northeastern.cs5500.starterbot.controller.BattleControllerTest" time="0.0"/>
+  <testcase name="testAcceptBattleSuccess()" classname="edu.northeastern.cs5500.starterbot.controller.BattleControllerTest" time="0.0"/>
+  <testcase name="testAcceptBattleRequestOnBattleNotExist()" classname="edu.northeastern.cs5500.starterbot.controller.BattleControllerTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[[Test worker] INFO edu.northeastern.cs5500.starterbot.service.PokemonShowdownService - Returned Pokedex from cache
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.PokedexController - created pokemon 'Bulbasaur'
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.PokedexController - created pokemon 'Charmander'
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.PokedexController - created pokemon 'Squirtle'
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.PokedexController - created pokemon 'Pikachu'
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.PokedexController - created pokemon 'Eevee'
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.PokedexController - created pokemon 'Vaporeon'
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.PokedexController - created pokemon 'Jolteon'
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.PokedexController - created pokemon 'Flareon'
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.PokedexController - created pokemon 'Mew'
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.PokedexController - created pokemon 'Espeon'
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.PokedexController - created pokemon 'Umbreon'
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.PokedexController - created pokemon 'Mightyena'
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.PokedexController - Created PokedexController
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.PokemonController - Created PokemonController
+[Test worker] ERROR edu.northeastern.cs5500.starterbot.controller.BattleController - Attempt to complete a battle where some pokemon are missing
+[Test worker] ERROR edu.northeastern.cs5500.starterbot.controller.BattleController - %s offered pokemon on a battle which hasn't started yet
+[Test worker] ERROR edu.northeastern.cs5500.starterbot.controller.BattleController - %s accepted the same battle more than once
+[Test worker] ERROR edu.northeastern.cs5500.starterbot.controller.BattleController - To user no longer possess their pokemon
+[Test worker] ERROR edu.northeastern.cs5500.starterbot.controller.BattleController - From user no longer possess their pokemon
+[Test worker] ERROR edu.northeastern.cs5500.starterbot.controller.BattleController - Attempt to complete a battle that does not exist
+[Test worker] ERROR edu.northeastern.cs5500.starterbot.controller.BattleController - %s accepted the same battle more than once
+[Test worker] ERROR edu.northeastern.cs5500.starterbot.controller.BattleController - %s tried to decline a battle to %s that does not exist
+[Test worker] ERROR edu.northeastern.cs5500.starterbot.controller.BattleController - %s offered pokemon on a battle but no battle exists
+[Test worker] ERROR edu.northeastern.cs5500.starterbot.controller.BattleController - Attempt to complete a battle where not everybody has confirmed it
+[Test worker] ERROR edu.northeastern.cs5500.starterbot.controller.BattleController - %s chooses pokemon to a battle to %s but no battle exists
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.BattleController - %s cancelled their battle
+[Test worker] ERROR edu.northeastern.cs5500.starterbot.controller.BattleController - Attempt to complete a battle where some pokemon are missing
+[Test worker] INFO edu.northeastern.cs5500.starterbot.controller.BattleController - %s (fromUser) offered to battle %s
+[Test worker] ERROR edu.northeastern.cs5500.starterbot.controller.BattleController - %s chooses pokemon to a battle to %s but no battle exists
+]]></system-err>
+</testsuite>

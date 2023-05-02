@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BattleCommand.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edu.northeastern.cs5500.starterbot</a> &gt; <a href="index.source.html" class="el_package">edu.northeastern.cs5500.starterbot.command</a> &gt; <span class="el_source">BattleCommand.java</span></div><h1>BattleCommand.java</h1><pre class="source lang-java linenums">package edu.northeastern.cs5500.starterbot.command;
+
+import edu.northeastern.cs5500.starterbot.annotation.ExcludeFromJacocoGeneratedReport;
+import edu.northeastern.cs5500.starterbot.controller.BattleController;
+import edu.northeastern.cs5500.starterbot.exception.BattleException;
+import edu.northeastern.cs5500.starterbot.model.Battle;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.MessageBuilder;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.Button;
+
+/** The battle command will start the battling process between two users. */
+@Singleton
+public class BattleCommand implements SlashCommandHandler {
+
+    public static final String ACCEPT_BUTTON = &quot;accept_battle&quot;;
+    public static final String DECLINE_BUTTON = &quot;decline_battle&quot;;
+    public static final String CANCEL_BUTTON = &quot;cancel_battle&quot;;
+    public static final String CONFIRM_BUTTON = &quot;confirm_battle&quot;;
+    public static final String USER = &quot;user&quot;;
+    public static final String BATTLE = &quot;battle&quot;;
+    public static final String BATTLE_INVITE = &quot;Battle Invite&quot;;
+    public static final String BATTLE_AGAINST_YOUR_FRIENDS = &quot;Battle Against Your Friends&quot;;
+    public static final String BOT_SEND_A_BATTLE_INVITE_TO_USER =
+            &quot;The bot will send a battle invite to a selected user&quot;;
+    public static final String INVITE_TO_A_BATTLE = &quot;%s invites you to a battle.&quot;;
+    public static final String NO_INTERESTS = &quot;Not Interested.&quot;;
+    public static final String LET_S_BATTLE = &quot;Let's Battle!&quot;;
+    public static final String BEEN_NOTIFIED_OF_BATTLE_INVITE =
+            &quot;%s has been notified of your battle invite.&quot;;
+
+    @Inject BattleController battleController;
+
+    @Inject
+<span class="fc" id="L45">    public BattleCommand() {}</span>
+
+    /**
+     * Gets the battle command name.
+     *
+     * @return battle
+     */
+    @Override
+    public String getName() {
+<span class="fc" id="L54">        return BATTLE;</span>
+    }
+
+    /**
+     * Gets command data
+     *
+     * @return Battle Against Your Friends in Command
+     */
+    @Override
+    public CommandData getCommandData() {
+<span class="fc" id="L64">        return new CommandData(getName(), BATTLE_AGAINST_YOUR_FRIENDS)</span>
+<span class="fc" id="L65">                .addOptions(</span>
+                        new OptionData(OptionType.USER, USER, BOT_SEND_A_BATTLE_INVITE_TO_USER)
+<span class="fc" id="L67">                                .setRequired(true));</span>
+    }
+
+    /**
+     * Generates an embed offering a battle
+     *
+     * @param fromUserId user who started the fight
+     * @return a message embed
+     */
+    MessageEmbed renderBattleRequest(String fromUserId) {
+<span class="fc" id="L77">        EmbedBuilder embedBuilder = new EmbedBuilder();</span>
+<span class="fc" id="L78">        embedBuilder.setTitle(BATTLE_INVITE);</span>
+<span class="fc" id="L79">        embedBuilder.setDescription(String.format(INVITE_TO_A_BATTLE, fromUserId));</span>
+<span class="fc" id="L80">        return embedBuilder.build();</span>
+    }
+
+    /**
+     * Generates a message offering a battle.
+     *
+     * @param fromUserId user who started the fight
+     * @return a message to be sent
+     */
+    Message renderBattleMessage(String fromUserId) {
+<span class="fc" id="L90">        MessageEmbed messageEmbed = renderBattleRequest(fromUserId);</span>
+<span class="fc" id="L91">        MessageBuilder messageBuilder = new MessageBuilder();</span>
+<span class="fc" id="L92">        Message message =</span>
+                messageBuilder
+<span class="fc" id="L94">                        .setEmbeds(messageEmbed)</span>
+<span class="fc" id="L95">                        .setActionRows(</span>
+<span class="fc" id="L96">                                ActionRow.of(</span>
+<span class="fc" id="L97">                                        Button.success(ACCEPT_BUTTON, LET_S_BATTLE),</span>
+<span class="fc" id="L98">                                        Button.danger(CANCEL_BUTTON, NO_INTERESTS)))</span>
+<span class="fc" id="L99">                        .build();</span>
+<span class="fc" id="L100">        return message;</span>
+    }
+
+    /**
+     * Sends a message to confirm the battle request
+     *
+     * @param jda jda object of this event
+     * @param battle battle
+     */
+    @ExcludeFromJacocoGeneratedReport
+    private void sendConfirmBattleRequest(JDA jda, Battle battle) {
+        jda.retrieveUserById(battle.getFromUserId())
+                .queue(
+                        fromUser -&gt; {
+<span class="nc" id="L114">                            Message message = renderBattleMessage(fromUser.getAsMention());</span>
+<span class="nc" id="L115">                            jda.retrieveUserById(battle.getToUserId())</span>
+<span class="nc" id="L116">                                    .flatMap(toUser -&gt; toUser.openPrivateChannel())</span>
+<span class="nc" id="L117">                                    .flatMap(channel -&gt; channel.sendMessage(message))</span>
+<span class="nc" id="L118">                                    .queue(</span>
+                                            msg -&gt;
+<span class="nc" id="L120">                                                    battleController.addPendingMessageId(</span>
+<span class="nc" id="L121">                                                            battle.getId(), msg.getId()));</span>
+<span class="nc" id="L122">                        });</span>
+    }
+
+    /**
+     * Processes the request for battle.
+     *
+     * @param event an event expected to be a SlashCommandEvent
+     */
+    @ExcludeFromJacocoGeneratedReport
+    @Override
+    public void onSlashCommandEvent(SlashCommandEvent event) {
+        String sourceUserId = event.getUser().getId();
+        User targetUser = event.getOption(USER).getAsUser();
+        String targetUserId = targetUser.getId();
+
+        try {
+            Battle battle = battleController.createBattle(sourceUserId, targetUserId);
+            sendConfirmBattleRequest(event.getJDA(), battle);
+            event.reply(String.format(BEEN_NOTIFIED_OF_BATTLE_INVITE, targetUser.getAsMention()))
+                    .queue();
+        } catch (BattleException battleException) {
+            event.reply(battleException.getMessage()).queue();
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

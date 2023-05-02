@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TradeButtonClickHandleAccept.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edu.northeastern.cs5500.starterbot</a> &gt; <a href="index.source.html" class="el_package">edu.northeastern.cs5500.starterbot.command</a> &gt; <span class="el_source">TradeButtonClickHandleAccept.java</span></div><h1>TradeButtonClickHandleAccept.java</h1><pre class="source lang-java linenums">package edu.northeastern.cs5500.starterbot.command;
+
+import edu.northeastern.cs5500.starterbot.annotation.ExcludeFromJacocoGeneratedReport;
+import edu.northeastern.cs5500.starterbot.controller.PokemonController;
+import edu.northeastern.cs5500.starterbot.controller.TradeController;
+import edu.northeastern.cs5500.starterbot.controller.UserInventoryController;
+import edu.northeastern.cs5500.starterbot.exception.TradeException;
+import edu.northeastern.cs5500.starterbot.model.Pokemon;
+import edu.northeastern.cs5500.starterbot.model.Trade;
+import edu.northeastern.cs5500.starterbot.utils.TradeMessageUtil;
+import java.util.Collection;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import lombok.extern.slf4j.Slf4j;
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.MessageBuilder;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.Button;
+import net.dv8tion.jda.api.interactions.components.selections.SelectionMenu;
+
+/** TradeButtonClickHandleAccept allows to process acceptance of the trade request. */
+@Singleton
+<span class="fc" id="L26">@Slf4j</span>
+public class TradeButtonClickHandleAccept implements ButtonClickHandler {
+    @Inject TradeController tradeController;
+    @Inject UserInventoryController inventoryController;
+    @Inject PokemonController pokemonController;
+    @Inject TradeMessageUtil msgUtil;
+
+    @Inject
+<span class="fc" id="L34">    public TradeButtonClickHandleAccept() {}</span>
+
+    /**
+     * Gets the trade button click handler name.
+     *
+     * @return name - the name of the trade button click handler
+     */
+    @Override
+    public String getName() {
+<span class="fc" id="L43">        return &quot;accept_trade&quot;;</span>
+    }
+
+    /**
+     * Creates a message with selection menu of pokemons.
+     *
+     * @param userPokemons pokemons this user possesses
+     * @return message
+     * @throws TradeException
+     */
+    Message renderSelectionMessage(Collection&lt;Pokemon&gt; userPokemons) throws TradeException {
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        if (userPokemons.isEmpty()) {</span>
+<span class="fc" id="L55">            throw new TradeException(</span>
+                    &quot;Unable to start trade, one of the parties doesn't have any pokemons in their inventory.&quot;);
+        }
+<span class="fc" id="L58">        EmbedBuilder embedBuilder = new EmbedBuilder();</span>
+<span class="fc" id="L59">        embedBuilder.setTitle(&quot;Please choose your pokemon to trade&quot;);</span>
+<span class="fc" id="L60">        MessageEmbed embed = embedBuilder.build();</span>
+<span class="fc" id="L61">        MessageBuilder messageBuilder = new MessageBuilder();</span>
+<span class="fc" id="L62">        SelectionMenu.Builder menuBuilder =</span>
+<span class="fc" id="L63">                SelectionMenu.create(&quot;select-pokemon-dropdown&quot;)</span>
+<span class="fc" id="L64">                        .setPlaceholder(&quot;Choose your pokemon to trade&quot;);</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        for (Pokemon pokemon : userPokemons) {</span>
+<span class="fc" id="L66">            menuBuilder.addOption(pokemon.getName(), &quot;trade:&quot; + pokemon.getId().toHexString());</span>
+<span class="fc" id="L67">        }</span>
+<span class="fc" id="L68">        SelectionMenu menu = menuBuilder.build();</span>
+<span class="fc" id="L69">        return messageBuilder</span>
+<span class="fc" id="L70">                .setEmbeds(embed)</span>
+<span class="fc" id="L71">                .setActionRows(</span>
+<span class="fc" id="L72">                        ActionRow.of(menu),</span>
+<span class="fc" id="L73">                        ActionRow.of(Button.danger(&quot;cancel_trade&quot;, &quot;Cancel trade&quot;)))</span>
+<span class="fc" id="L74">                .build();</span>
+    }
+
+    /**
+     * Informs users that the trade begins and sends both users an embed with choose pokemon request
+     *
+     * @param event - a trade button click event
+     */
+    @ExcludeFromJacocoGeneratedReport
+    @Override
+    public void onButtonClick(ButtonClickEvent event) {
+        log.info(&quot;{} clicked accept button&quot;, event.getUser().getName());
+        try {
+            // Prepare all the data
+            Trade trade = tradeController.acceptTradeRequest(event.getUser().getId());
+            Message dm1 =
+                    renderSelectionMessage(inventoryController.getUserPokemons(trade.getUser1Id()));
+            Message dm2 =
+                    renderSelectionMessage(inventoryController.getUserPokemons(trade.getUser2Id()));
+            // Send out messages
+            event.reply(&quot;Initiating the trade...&quot;)
+                    .setEphemeral(true)
+                    .queue(
+                            _msg -&gt; {
+<span class="nc" id="L98">                                msgUtil.sendDM(event.getJDA(), trade, trade.getUser1Id(), dm1)</span>
+<span class="nc" id="L99">                                        .queue();</span>
+<span class="nc" id="L100">                                msgUtil.sendDM(event.getJDA(), trade, trade.getUser2Id(), dm2)</span>
+<span class="nc" id="L101">                                        .queue();</span>
+<span class="nc" id="L102">                            });</span>
+            // Remove the trade request message as the user has responded
+            tradeController.removePendingMessageId(trade.getId(), event.getMessage().getId());
+            event.getMessage().delete().queue();
+        } catch (TradeException e) {
+            event.reply(e.getMessage()).queue();
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

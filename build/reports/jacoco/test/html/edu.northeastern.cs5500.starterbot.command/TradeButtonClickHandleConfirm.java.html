@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TradeButtonClickHandleConfirm.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edu.northeastern.cs5500.starterbot</a> &gt; <a href="index.source.html" class="el_package">edu.northeastern.cs5500.starterbot.command</a> &gt; <span class="el_source">TradeButtonClickHandleConfirm.java</span></div><h1>TradeButtonClickHandleConfirm.java</h1><pre class="source lang-java linenums">package edu.northeastern.cs5500.starterbot.command;
+
+import edu.northeastern.cs5500.starterbot.annotation.ExcludeFromJacocoGeneratedReport;
+import edu.northeastern.cs5500.starterbot.controller.PokemonController;
+import edu.northeastern.cs5500.starterbot.controller.TradeController;
+import edu.northeastern.cs5500.starterbot.controller.UserInventoryController;
+import edu.northeastern.cs5500.starterbot.exception.ForceCancelTradeException;
+import edu.northeastern.cs5500.starterbot.exception.TradeException;
+import edu.northeastern.cs5500.starterbot.model.Pokemon;
+import edu.northeastern.cs5500.starterbot.model.Trade;
+import edu.northeastern.cs5500.starterbot.utils.MessageUtil;
+import edu.northeastern.cs5500.starterbot.utils.TradeMessageUtil;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import lombok.extern.slf4j.Slf4j;
+import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
+
+/** TradeButtonClickHandleConfirm allows to process confirmance of the trade. */
+@Singleton
+<span class="fc" id="L20">@Slf4j</span>
+public class TradeButtonClickHandleConfirm implements ButtonClickHandler {
+    @Inject TradeController tradeController;
+    @Inject UserInventoryController inventoryController;
+    @Inject PokemonController pokemonController;
+    @Inject TradeMessageUtil msgUtil;
+
+    @Inject
+<span class="fc" id="L28">    public TradeButtonClickHandleConfirm() {}</span>
+
+    /**
+     * Gets the trade button click handler name.
+     *
+     * @return name - the name of the trade button click handler
+     */
+    @Override
+    public String getName() {
+<span class="fc" id="L37">        return &quot;confirm_trade&quot;;</span>
+    }
+
+    /**
+     * Creates a message which states the trade has been succesfully executed.
+     *
+     * @param aquiredPokemon pokemon that user will get as a result of trade
+     * @return a String message
+     */
+    String renderTradeConfirmationMessage(Pokemon aquiredPokemon) {
+<span class="fc" id="L47">        return String.format(</span>
+                &quot;The trade has been completed. Have fun with your new %s!&quot;,
+<span class="fc" id="L49">                aquiredPokemon.getName());</span>
+    }
+
+    /**
+     * Creates a message which informs one party that the other party has confirmed the trade.
+     *
+     * @param userAsMention a user that confirmed the trade offer
+     * @return a String message
+     * @throws TradeException
+     */
+    String renderOtherPartyConfirmedMessage(String userAsMention) throws TradeException {
+<span class="fc" id="L60">        return String.format(&quot;%s has confirmed the trade.&quot;, userAsMention);</span>
+    }
+
+    /**
+     * Sends trade confirmation message
+     *
+     * @param event a trade button click event
+     * @param trade current trade
+     * @throws TradeException
+     */
+    @ExcludeFromJacocoGeneratedReport
+    void sendTradeConfirmationMessages(ButtonClickEvent event, Trade trade) throws TradeException {
+        Pokemon user1Pokemon = pokemonController.getPokemonById(trade.getUser1Offer());
+        Pokemon user2Pokemon = pokemonController.getPokemonById(trade.getUser2Offer());
+        // The condition to complete the trade is that two users confirmed the trade offer.
+        // isUser1Closing checks if User1 was the second person who pushed confirmation button.
+        Boolean isUser1Closing = event.getUser().getId().equals(trade.getUser1Id());
+        event.reply(renderTradeConfirmationMessage(isUser1Closing ? user2Pokemon : user1Pokemon))
+                .queue();
+        event.getJDA()
+                .retrieveUserById(isUser1Closing ? trade.getUser2Id() : trade.getUser1Id())
+                .queue(
+                        otherUser -&gt;
+<span class="nc" id="L83">                                MessageUtil.sendDirectMessage(</span>
+                                        otherUser,
+<span class="nc" id="L85">                                        renderTradeConfirmationMessage(</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">                                                isUser1Closing ? user1Pokemon : user2Pokemon),</span>
+                                        false,
+                                        0));
+    }
+
+    /**
+     * Informs user that the trade has been confirmed
+     *
+     * @param event a trade button click event
+     */
+    @ExcludeFromJacocoGeneratedReport
+    @Override
+    public void onButtonClick(ButtonClickEvent event) {
+        log.info(&quot;{} clicked confirm button&quot;, event.getUser().getName());
+        try {
+            try {
+                Trade trade = tradeController.acceptTrade(event.getUser().getId());
+                String otherUserId;
+                if (trade.getUser1Id().equals(event.getUser().getId())) {
+                    otherUserId = trade.getUser2Id();
+                } else {
+                    otherUserId = trade.getUser1Id();
+                }
+
+                if (trade.getUser1Accept() &amp;&amp; trade.getUser2Accept()) {
+                    trade = tradeController.completeTrade(trade.getId());
+                    sendTradeConfirmationMessages(event, trade);
+                } else {
+                    event.reply(&quot;You have confirmed the trade.&quot;).queue();
+                    msgUtil.sendDM(
+                                    event.getJDA(),
+                                    trade,
+                                    otherUserId,
+                                    renderOtherPartyConfirmedMessage(
+                                            event.getUser().getAsMention()))
+                            .queue();
+                }
+                event.getMessage().delete().queue();
+            } catch (ForceCancelTradeException e) {
+                Trade trade = tradeController.cancelTrade(e.getUser1Id());
+                msgUtil.cleanupTradeMessages(event.getJDA(), trade);
+                event.getJDA()
+                        .retrieveUserById(e.getUser1Id())
+                        .queue(
+                                user -&gt;
+<span class="nc" id="L131">                                        MessageUtil.sendDirectMessage(</span>
+<span class="nc" id="L132">                                                user, e.getMessageToUser1(), false, 0));</span>
+                event.getJDA()
+                        .retrieveUserById(e.getUser2Id())
+                        .queue(
+                                user -&gt;
+<span class="nc" id="L137">                                        MessageUtil.sendDirectMessage(</span>
+<span class="nc" id="L138">                                                user, e.getMessageToUser2(), false, 0));</span>
+                throw e;
+            }
+        } catch (TradeException e) {
+            event.reply(e.getMessage()).queue();
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

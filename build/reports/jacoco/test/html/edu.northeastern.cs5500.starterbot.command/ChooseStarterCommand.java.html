@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ChooseStarterCommand.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edu.northeastern.cs5500.starterbot</a> &gt; <a href="index.source.html" class="el_package">edu.northeastern.cs5500.starterbot.command</a> &gt; <span class="el_source">ChooseStarterCommand.java</span></div><h1>ChooseStarterCommand.java</h1><pre class="source lang-java linenums">package edu.northeastern.cs5500.starterbot.command;
+
+import edu.northeastern.cs5500.starterbot.annotation.ExcludeFromJacocoGeneratedReport;
+import edu.northeastern.cs5500.starterbot.utils.MessageUtil;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import lombok.extern.slf4j.Slf4j;
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.MessageBuilder;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.events.guild.GenericGuildEvent;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.Button;
+
+/**
+ * The choose starter command sends an interactive direct message to a user, prompting them to
+ * choose a starter pokemon.
+ */
+@Singleton
+<span class="fc" id="L22">@Slf4j</span>
+public class ChooseStarterCommand implements GuildEventHandler {
+
+    private static final String BULBASAUR_NAME = &quot;Bulbasaur&quot;;
+    private static final String CHARMANDER_NAME = &quot;Charmander&quot;;
+    private static final String SQUIRTLE_NAME = &quot;Squirtle&quot;;
+
+    private static final int BULBASAUR_NUMBER = 1;
+    private static final int CHARMANDER_NUMBER = 4;
+    private static final int SQUIRTLE_NUMBER = 7;
+
+    private static final String GREEN_CIRCLE_EMOJI = &quot;\ud83d\udfe2&quot;;
+    private static final String PURPLE_CIRCLE_EMOJI = &quot;\ud83d\udfe3&quot;;
+    private static final String RED_CIRCLE_EMOJI = &quot;\ud83d\udd34&quot;;
+    private static final String BLUE_CIRCLE_EMOJI = &quot;\ud83d\udd35&quot;;
+    private static final String CAUTION_EMOJI = &quot;\u26a0\ufe0f&quot;;
+
+    private static final String CHOOSE_STARTER_ID = &quot;choose-starter:%d&quot;;
+    private static final String CHOOSE_STARTER_IMAGE_URL =
+            &quot;https://pvplive.net/wp-content/uploads/2021/01/2x1_PokemonPRBYPoll_v03.ad0fb582e7aa96d0b609fd9e3453fc3c79ec3364-7245868.jpg&quot;;
+
+    // This delay gives the user time to read the greeting message before the choose pokemon message
+    // appears
+    static final int MESSAGE_DELAY_IN_SECONDS = 8;
+
+    @Inject
+<span class="fc" id="L48">    public ChooseStarterCommand() {}</span>
+
+    /**
+     * Generates a static message prompting the user to choose a starter pokemon.
+     *
+     * @return the choose starter pokemon Message to be sent
+     */
+    Message generateChooseStarterMessage() {
+<span class="fc" id="L56">        EmbedBuilder embedBuilder = new EmbedBuilder();</span>
+<span class="fc" id="L57">        embedBuilder.setTitle(&quot;Choose Your Starter Pokemon&quot;);</span>
+<span class="fc" id="L58">        embedBuilder.setDescription(</span>
+<span class="fc" id="L59">                String.format(</span>
+                        &quot;Which starter do you wish to start your journey with?\n\nFrom left to right:\n\nBulbasaur, a Grass %s /Poison %s type Pokemon\nCharmander, a Fire %s type Pokemon\nSquirtle, a Water %s type Pokemon\n\n %s Your decision is permanent, so choose carefully! %s&quot;,
+                        GREEN_CIRCLE_EMOJI,
+                        PURPLE_CIRCLE_EMOJI,
+                        RED_CIRCLE_EMOJI,
+                        BLUE_CIRCLE_EMOJI,
+                        CAUTION_EMOJI,
+                        CAUTION_EMOJI));
+<span class="fc" id="L67">        embedBuilder.setImage(CHOOSE_STARTER_IMAGE_URL);</span>
+<span class="fc" id="L68">        MessageEmbed embed = embedBuilder.build();</span>
+
+<span class="fc" id="L70">        MessageBuilder messageBuilder = new MessageBuilder();</span>
+<span class="fc" id="L71">        Message buttonMessage =</span>
+                messageBuilder
+<span class="fc" id="L73">                        .setEmbeds(embed)</span>
+<span class="fc" id="L74">                        .setActionRows(</span>
+<span class="fc" id="L75">                                ActionRow.of(</span>
+<span class="fc" id="L76">                                        Button.success(</span>
+<span class="fc" id="L77">                                                String.format(CHOOSE_STARTER_ID, BULBASAUR_NUMBER),</span>
+                                                BULBASAUR_NAME),
+<span class="fc" id="L79">                                        Button.danger(</span>
+<span class="fc" id="L80">                                                String.format(CHOOSE_STARTER_ID, CHARMANDER_NUMBER),</span>
+                                                CHARMANDER_NAME),
+<span class="fc" id="L82">                                        Button.primary(</span>
+<span class="fc" id="L83">                                                String.format(CHOOSE_STARTER_ID, SQUIRTLE_NUMBER),</span>
+                                                SQUIRTLE_NAME)))
+<span class="fc" id="L85">                        .build();</span>
+<span class="fc" id="L86">        return buttonMessage;</span>
+    }
+
+    /**
+     * Executes a direct message to the user who joined the server, prompting them to choose a
+     * starter pokemon by clicking one of the buttons in the message.
+     *
+     * @param genericEvent - a generic guild event, expected to be a GuildMemberJoinEvent
+     */
+    @Override
+    @ExcludeFromJacocoGeneratedReport
+    public void onGuildEvent(GenericGuildEvent genericEvent) {
+        GuildMemberJoinEvent event = (GuildMemberJoinEvent) genericEvent;
+        log.info(
+                String.format(
+                        &quot;Choose starter message sent to user with user ID: %s&quot;,
+                        event.getMember().getId()));
+        MessageUtil.sendDirectMessage(
+                event.getUser(), generateChooseStarterMessage(), true, MESSAGE_DELAY_IN_SECONDS);
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

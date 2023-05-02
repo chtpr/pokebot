@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TradeController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edu.northeastern.cs5500.starterbot</a> &gt; <a href="index.source.html" class="el_package">edu.northeastern.cs5500.starterbot.controller</a> &gt; <span class="el_source">TradeController.java</span></div><h1>TradeController.java</h1><pre class="source lang-java linenums">package edu.northeastern.cs5500.starterbot.controller;
+
+import com.mongodb.lang.Nullable;
+import edu.northeastern.cs5500.starterbot.exception.ForceCancelTradeException;
+import edu.northeastern.cs5500.starterbot.exception.TradeException;
+import edu.northeastern.cs5500.starterbot.model.Trade;
+import edu.northeastern.cs5500.starterbot.repository.GenericRepository;
+import java.util.ArrayList;
+import java.util.List;
+import javax.annotation.Nonnull;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import lombok.extern.slf4j.Slf4j;
+import org.bson.types.ObjectId;
+
+<span class="pc bpc" id="L16" title="1 of 2 branches missed.">@Slf4j</span>
+@Singleton
+public class TradeController {
+    GenericRepository&lt;Trade&gt; tradeRepository;
+    UserInventoryController inventoryController;
+
+    @Inject
+    public TradeController(
+<span class="fc" id="L24">            GenericRepository&lt;Trade&gt; tradeRepository, UserInventoryController inventoryController) {</span>
+<span class="fc" id="L25">        this.tradeRepository = tradeRepository;</span>
+<span class="fc" id="L26">        this.inventoryController = inventoryController;</span>
+<span class="fc" id="L27">        log.info(&quot;Created TradeController&quot;);</span>
+<span class="fc" id="L28">    }</span>
+
+    /**
+     * Begin a trade between two users.
+     *
+     * @param user1Id - user initiating the trade
+     * @param user2Id - user that receives the trade request
+     * @return Trade object representing a trade between two users
+     */
+    @Nonnull
+    public Trade beginTrade(String user1Id, String user2Id) throws TradeException {
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        if (user1Id.equals(user2Id)) {</span>
+            // You cannot trade with yourself
+<span class="fc" id="L41">            log.info(&quot;{} tried to trade with themselves&quot;, user1Id);</span>
+<span class="fc" id="L42">            throw new TradeException(&quot;You cannot trade with yourself!&quot;);</span>
+        }
+<span class="pc bpc" id="L44" title="1 of 2 branches missed.">        if (getTrade(user1Id) != null) {</span>
+<span class="nc" id="L45">            log.info(&quot;{} tried to trade with someone else during the current trade&quot;, user1Id);</span>
+<span class="nc" id="L46">            throw new TradeException(</span>
+                    &quot;You're already trading with someone. Please complete the ongoing trade first.&quot;);
+        }
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">        if (getTrade(user2Id) != null) {</span>
+<span class="nc" id="L50">            throw new TradeException(</span>
+                    &quot;That trainer is already trading with someone. Please wait for them to complete the trade first.&quot;);
+        }
+<span class="fc" id="L53">        List&lt;ObjectId&gt; user1Party = inventoryController.getPartyForUser(user1Id);</span>
+<span class="fc" id="L54">        List&lt;ObjectId&gt; user2Party = inventoryController.getPartyForUser(user2Id);</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        if (user1Party.isEmpty()) {</span>
+<span class="fc" id="L56">            log.info(&quot;{} tried to trade with empty party&quot;, user1Id);</span>
+<span class="fc" id="L57">            throw new TradeException(&quot;You don't have any pokemons to trade&quot;);</span>
+        }
+<span class="fc bfc" id="L59" title="All 2 branches covered.">        if (user2Party.isEmpty()) {</span>
+<span class="fc" id="L60">            log.info(&quot;{} tried to trade with {} who has no pokemons&quot;, user1Id, user2Id);</span>
+<span class="fc" id="L61">            throw new TradeException(&quot;That trainer doesn't have any pokemons to trade&quot;);</span>
+        }
+
+<span class="fc" id="L64">        Trade newTrade = new Trade();</span>
+
+<span class="fc" id="L66">        newTrade.setUser1Id(user1Id);</span>
+<span class="fc" id="L67">        newTrade.setUser2Id(user2Id);</span>
+<span class="fc" id="L68">        newTrade.setUser2ConfirmedTrade(false);</span>
+
+<span class="fc" id="L70">        return tradeRepository.add(newTrade);</span>
+    }
+
+    /**
+     * Get the active Trade object between these two users if it exists.
+     *
+     * @param userId one of the users in the trade
+     * @return null if there is no active trade, otherwise a Trade object
+     */
+    @Nullable
+    public Trade getTrade(String userId) {
+<span class="fc" id="L81">        Trade tradeFound = null;</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">        for (Trade trade : tradeRepository.getAll()) {</span>
+<span class="pc bpc" id="L83" title="1 of 4 branches missed.">            if (trade.getUser1Id().equals(userId) || trade.getUser2Id().equals(userId)) {</span>
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">                if (tradeFound != null) {</span>
+                    // Invalid state - user1 is trading with several people now at the
+                    // same time
+<span class="nc" id="L87">                    log.error(&quot;Found multiple ongoing trades for user {}&quot;, userId);</span>
+<span class="nc bnc" id="L88" title="All 2 branches missed.">                    assert false; // Make unit tests fail, but not production</span>
+                }
+<span class="fc" id="L90">                tradeFound = trade;</span>
+            }
+<span class="fc" id="L92">        }</span>
+<span class="fc" id="L93">        return tradeFound;</span>
+    }
+
+    /**
+     * Gets all existing trades
+     *
+     * @return all existing trades
+     */
+    @Nullable
+    ArrayList&lt;Trade&gt; getAllTrades() {
+<span class="fc" id="L103">        ArrayList&lt;Trade&gt; trades = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L104" title="All 2 branches covered.">        for (Trade trade : tradeRepository.getAll()) {</span>
+<span class="fc" id="L105">            trades.add(trade);</span>
+<span class="fc" id="L106">        }</span>
+<span class="fc" id="L107">        return trades;</span>
+    }
+
+    /**
+     * Accept trade request
+     *
+     * @param acceptingUserId - a user that is expected to respond to trade request
+     * @return Trade object representing a trade between two users
+     * @throws TradeException
+     */
+    public Trade acceptTradeRequest(String acceptingUserId) throws TradeException {
+<span class="fc" id="L118">        Trade existingTrade = getTrade(acceptingUserId);</span>
+<span class="fc bfc" id="L119" title="All 2 branches covered.">        if (existingTrade == null) {</span>
+            // If the trade already exists, nothing to do here
+<span class="fc" id="L121">            log.error(&quot;{} accepted a trade request but no trade exists&quot;, acceptingUserId);</span>
+<span class="fc" id="L122">            throw new TradeException(&quot;This trade is not active.&quot;);</span>
+        }
+<span class="pc bpc" id="L124" title="1 of 2 branches missed.">        if (!existingTrade.getUser2Id().equals(acceptingUserId)) {</span>
+            // If the trade already exists, nothing to do here
+<span class="nc" id="L126">            log.error(</span>
+                    &quot;{} attempted to accept a trade that they created themselves&quot;, acceptingUserId);
+<span class="nc" id="L128">            throw new TradeException(&quot;This trade is not active.&quot;);</span>
+        }
+<span class="fc" id="L130">        existingTrade.setUser2ConfirmedTrade(true);</span>
+<span class="fc" id="L131">        Trade updTrade = tradeRepository.update(existingTrade);</span>
+<span class="fc" id="L132">        return updTrade;</span>
+    }
+
+    /**
+     * Offer a set of pokemon as part of an active trade between two users.
+     *
+     * &lt;p&gt;Only valid if the user has not yet offered Pokemon.
+     *
+     * @param fromUserId sender of the offer
+     * @param pokemonToOffer pokemon offered
+     * @return current Trade object
+     */
+    @Nonnull
+    public Trade offerPokemon(String fromUserId, ObjectId pokemonToOffer) throws TradeException {
+<span class="fc" id="L146">        Trade existingTrade = getTrade(fromUserId);</span>
+
+<span class="fc bfc" id="L148" title="All 2 branches covered.">        if (existingTrade == null) {</span>
+            // If the trade already exists, nothing to do here
+<span class="fc" id="L150">            log.error(&quot;{} offered pokemon on a trade but no trade exists&quot;, fromUserId);</span>
+<span class="fc" id="L151">            throw new TradeException(&quot;This trade is not active.&quot;);</span>
+        }
+
+<span class="fc bfc" id="L154" title="All 2 branches covered.">        if (!existingTrade.getUser2ConfirmedTrade()) {</span>
+<span class="fc" id="L155">            log.error(&quot;{} offered pokemon on a trade which hasn't started yet&quot;, fromUserId);</span>
+<span class="fc" id="L156">            throw new TradeException(&quot;The trade hasn't started.&quot;);</span>
+        }
+
+<span class="pc bpc" id="L159" title="1 of 2 branches missed.">        if (existingTrade.getUser1Id().equals(fromUserId)) {</span>
+<span class="fc" id="L160">            ObjectId existingOffer = existingTrade.getUser1Offer();</span>
+<span class="pc bpc" id="L161" title="1 of 2 branches missed.">            if (existingOffer != null) {</span>
+<span class="nc" id="L162">                log.error(&quot;{} offered pokemon on a trade more than once&quot;, fromUserId);</span>
+<span class="nc" id="L163">                throw new TradeException(&quot;Cannot change/update offer on a trade&quot;);</span>
+            }
+<span class="fc" id="L165">            log.info(&quot;{} (user 1) offered to trade {}&quot;, fromUserId, pokemonToOffer);</span>
+<span class="fc" id="L166">            existingTrade.setUser1Offer(pokemonToOffer);</span>
+<span class="fc" id="L167">        } else {</span>
+            // getUser2Id().equals(fromUserId)
+<span class="nc" id="L169">            ObjectId existingOffer = existingTrade.getUser2Offer();</span>
+<span class="nc bnc" id="L170" title="All 2 branches missed.">            if (existingOffer != null) {</span>
+<span class="nc" id="L171">                log.error(&quot;{} offered pokemon on a trade more than once&quot;, fromUserId);</span>
+<span class="nc" id="L172">                throw new TradeException(&quot;Cannot change/update offer on a trade&quot;);</span>
+            }
+<span class="nc" id="L174">            log.info(&quot;{} (user 2) offered to trade {}&quot;, fromUserId, pokemonToOffer);</span>
+<span class="nc" id="L175">            existingTrade.setUser2Offer(pokemonToOffer);</span>
+        }
+
+<span class="fc" id="L178">        tradeRepository.update(existingTrade);</span>
+<span class="fc" id="L179">        return existingTrade;</span>
+    }
+
+    /**
+     * Accepts the trade if it exists
+     *
+     * @param acceptingUserId a user to accept the trade
+     * @return
+     */
+    @Nonnull
+    public Trade acceptTrade(String acceptingUserId) throws TradeException {
+<span class="fc" id="L190">        Trade existingTrade = getTrade(acceptingUserId);</span>
+
+<span class="fc bfc" id="L192" title="All 2 branches covered.">        if (existingTrade == null) {</span>
+            // If the trade already exists, nothing to do here
+<span class="fc" id="L194">            log.error(&quot;{} accepted a trade but no trade exists&quot;, acceptingUserId);</span>
+<span class="fc" id="L195">            throw new TradeException(&quot;This trade is not active.&quot;);</span>
+        }
+
+<span class="fc bfc" id="L198" title="All 2 branches covered.">        if (existingTrade.getUser1Id().equals(acceptingUserId)) {</span>
+<span class="fc" id="L199">            Boolean accepted = existingTrade.getUser1Accept();</span>
+<span class="pc bpc" id="L200" title="1 of 2 branches missed.">            if (accepted) {</span>
+<span class="fc" id="L201">                log.error(&quot;{} accepted the same trade more than once&quot;, acceptingUserId);</span>
+<span class="fc" id="L202">                throw new TradeException(&quot;You have already accepted the trade&quot;);</span>
+            }
+<span class="nc" id="L204">            existingTrade.setUser1Accept(true);</span>
+<span class="nc" id="L205">        } else {</span>
+            // getUser2Id().equals(fromUserId)
+<span class="fc" id="L207">            Boolean accepted = existingTrade.getUser2Accept();</span>
+<span class="fc bfc" id="L208" title="All 2 branches covered.">            if (accepted) {</span>
+<span class="fc" id="L209">                log.error(&quot;{} accepted the same trade more than once&quot;, acceptingUserId);</span>
+<span class="fc" id="L210">                throw new TradeException(&quot;You have already accepted the trade&quot;);</span>
+            }
+<span class="fc" id="L212">            existingTrade.setUser2Accept(true);</span>
+        }
+
+<span class="fc" id="L215">        tradeRepository.update(existingTrade);</span>
+<span class="fc" id="L216">        return existingTrade;</span>
+    }
+
+    /**
+     * Cancel the trade between these two users if it exists.
+     *
+     * @param cancellingUserId the user that requested cancellation
+     * @return trade to be cancelled
+     */
+    public Trade cancelTrade(String cancellingUserId) throws TradeException {
+<span class="fc" id="L226">        Trade existingTrade = getTrade(cancellingUserId);</span>
+
+<span class="fc bfc" id="L228" title="All 2 branches covered.">        if (existingTrade == null) {</span>
+<span class="fc" id="L229">            log.error(&quot;{} tried to cancel a trade that does not exist&quot;, cancellingUserId);</span>
+<span class="fc" id="L230">            throw new TradeException(&quot;The trade is not active.&quot;);</span>
+        }
+
+<span class="fc" id="L233">        log.info(&quot;{} cancelled their trade&quot;, cancellingUserId);</span>
+
+<span class="fc" id="L235">        tradeRepository.delete(existingTrade.getId());</span>
+<span class="fc" id="L236">        return existingTrade;</span>
+    }
+
+    /**
+     * Completes the trade between two users.
+     *
+     * @param tradeId an ID of the trade between two users
+     * @return completed Trade
+     * @throws TradeException
+     */
+    public Trade completeTrade(ObjectId tradeId) throws TradeException {
+<span class="fc" id="L247">        Trade trade = tradeRepository.get(tradeId);</span>
+<span class="fc bfc" id="L248" title="All 2 branches covered.">        if (trade == null) {</span>
+<span class="fc" id="L249">            log.error(&quot;Attempt to complete a trade that does not exist&quot;);</span>
+<span class="fc" id="L250">            throw new TradeException(&quot;The trade is not active.&quot;);</span>
+        }
+<span class="fc" id="L252">        ObjectId user1Offer = trade.getUser1Offer();</span>
+<span class="fc" id="L253">        ObjectId user2Offer = trade.getUser2Offer();</span>
+<span class="pc bpc" id="L254" title="1 of 4 branches missed.">        if (user1Offer == null || user2Offer == null) {</span>
+<span class="fc" id="L255">            log.error(&quot;Attempt to complete a trade where some offers are missing&quot;);</span>
+<span class="fc" id="L256">            throw new TradeException(&quot;The trade is not active.&quot;);</span>
+        }
+<span class="pc bpc" id="L258" title="1 of 4 branches missed.">        if (!trade.getUser1Accept() || !trade.getUser2Accept()) {</span>
+<span class="fc" id="L259">            log.error(&quot;Attempt to complete a trade where not everybody has confirmed it&quot;);</span>
+<span class="fc" id="L260">            throw new TradeException(&quot;The trade is not active.&quot;);</span>
+        }
+<span class="fc" id="L262">        ArrayList&lt;ObjectId&gt; user1Party = inventoryController.getPartyForUser(trade.getUser1Id());</span>
+<span class="fc" id="L263">        ArrayList&lt;ObjectId&gt; user2Party = inventoryController.getPartyForUser(trade.getUser2Id());</span>
+<span class="fc bfc" id="L264" title="All 2 branches covered.">        if (!user1Party.contains(user1Offer)) {</span>
+<span class="fc" id="L265">            log.error(&quot;User 1 no longer possesses their pokemon&quot;);</span>
+<span class="fc" id="L266">            throw new ForceCancelTradeException(</span>
+<span class="fc" id="L267">                    trade.getUser1Id(),</span>
+<span class="fc" id="L268">                    trade.getUser2Id(),</span>
+                    &quot;You no longer possess the pokemon you offered. The trade will be cancelled.&quot;,
+                    &quot;The other party no longer possess the pokemon they offered. The trade will be cancelled.&quot;);
+        }
+<span class="fc bfc" id="L272" title="All 2 branches covered.">        if (!user2Party.contains(user2Offer)) {</span>
+<span class="fc" id="L273">            log.error(&quot;User 2 no longer possesses their pokemon&quot;);</span>
+<span class="fc" id="L274">            throw new ForceCancelTradeException(</span>
+<span class="fc" id="L275">                    trade.getUser2Id(),</span>
+<span class="fc" id="L276">                    trade.getUser1Id(),</span>
+                    &quot;You no longer possess the pokemon you offered. The trade will be cancelled.&quot;,
+                    &quot;The other party no longer possesses the pokemon they offered. The trade will be cancelled.&quot;);
+        }
+<span class="fc" id="L280">        user1Party.remove(user1Offer);</span>
+<span class="fc" id="L281">        user2Party.remove(user2Offer);</span>
+<span class="fc" id="L282">        user1Party.add(user2Offer);</span>
+<span class="fc" id="L283">        user2Party.add(user1Offer);</span>
+<span class="fc" id="L284">        inventoryController.setPartyForUser(trade.getUser1Id(), user1Party);</span>
+<span class="fc" id="L285">        inventoryController.setPartyForUser(trade.getUser2Id(), user2Party);</span>
+<span class="fc" id="L286">        tradeRepository.delete(tradeId);</span>
+<span class="fc" id="L287">        return trade;</span>
+    }
+
+    /**
+     * Stores ID of Message that is pending.
+     *
+     * @param trade current trade
+     * @param messageId message id that needs to be stored
+     */
+    public void addPendingMessageId(ObjectId tradeId, String messageId) {
+<span class="nc" id="L297">        Trade trade = tradeRepository.get(tradeId); // Fetch the latest data</span>
+<span class="nc bnc" id="L298" title="All 4 branches missed.">        if (trade != null &amp;&amp; trade.getPendingMessageIds().add(messageId)) {</span>
+<span class="nc" id="L299">            tradeRepository.update(trade);</span>
+        }
+<span class="nc" id="L301">    }</span>
+
+    /**
+     * Removes ID of Message that is pending.
+     *
+     * @param trade current trade
+     * @param messageId message id that needs to be removed
+     */
+    public void removePendingMessageId(ObjectId tradeId, String messageId) {
+<span class="nc" id="L310">        Trade trade = tradeRepository.get(tradeId); // Fetch the latest data</span>
+<span class="nc bnc" id="L311" title="All 2 branches missed.">        if (trade.getPendingMessageIds().remove(messageId)) {</span>
+<span class="nc" id="L312">            tradeRepository.update(trade);</span>
+        }
+<span class="nc" id="L314">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

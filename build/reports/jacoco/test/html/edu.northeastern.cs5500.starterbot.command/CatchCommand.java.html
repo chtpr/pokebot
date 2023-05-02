@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CatchCommand.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edu.northeastern.cs5500.starterbot</a> &gt; <a href="index.source.html" class="el_package">edu.northeastern.cs5500.starterbot.command</a> &gt; <span class="el_source">CatchCommand.java</span></div><h1>CatchCommand.java</h1><pre class="source lang-java linenums">package edu.northeastern.cs5500.starterbot.command;
+
+import edu.northeastern.cs5500.starterbot.annotation.ExcludeFromJacocoGeneratedReport;
+import edu.northeastern.cs5500.starterbot.controller.PokedexController;
+import edu.northeastern.cs5500.starterbot.model.PokedexEntry;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import lombok.extern.slf4j.Slf4j;
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.MessageBuilder;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.Button;
+
+/**
+ * The catch command will return a random pokemon from the list of catchable pokemon and let the
+ * user know that they caught it.
+ */
+@Singleton
+<span class="fc" id="L23">@Slf4j</span>
+public class CatchCommand implements SlashCommandHandler {
+    public static final String KEEP_BUTTON = &quot;Keep&quot;;
+    public static final String RELEASE_BUTTON = &quot;Release&quot;;
+
+    PokedexController pokedexController;
+
+    @Inject
+<span class="fc" id="L31">    public CatchCommand(PokedexController pokedexController) {</span>
+<span class="fc" id="L32">        this.pokedexController = pokedexController;</span>
+<span class="fc" id="L33">    }</span>
+
+    /** Gets the name of the slash command */
+    @Override
+    public String getName() {
+<span class="fc" id="L38">        return &quot;catch&quot;;</span>
+    }
+
+    /** Gets the command data of the slash command */
+    @Override
+    public CommandData getCommandData() {
+<span class="fc" id="L44">        return new CommandData(getName(), &quot;Catch a random pokemon&quot;);</span>
+    }
+
+    /**
+     * Generates a message that shows the user a randomly caught Pokemon. Pokedex controller is used
+     * to get a random Pokemon, and then if the user decides to keep it, the Pokemon will be created
+     * and added to the user party through the onButtonClick event. If the user decides to release
+     * it, a Pokemon is never created and the user will receive a message say they have released the
+     * Pokemon.
+     *
+     * @param event the SlashCommandEvent used to provide username
+     * @return the message that shows the user a randomly caught Pokemon
+     */
+    Message catchPokemon(String discordUsername) {
+<span class="fc" id="L58">        EmbedBuilder embedBuilder = new EmbedBuilder();</span>
+<span class="fc" id="L59">        PokedexEntry entry = pokedexController.getRandomPokedexEntry();</span>
+<span class="fc" id="L60">        embedBuilder.setTitle(</span>
+<span class="fc" id="L61">                String.format(&quot;You, %s, caught a %s!&quot;, discordUsername, entry.getName()));</span>
+<span class="fc" id="L62">        embedBuilder.setDescription(</span>
+<span class="fc" id="L63">                String.format(&quot;Would you like to keep or release the %s?&quot;, entry.getName()));</span>
+<span class="fc" id="L64">        embedBuilder.addField(&quot;Type&quot;, entry.getPokemonTypes().get(0), false);</span>
+<span class="fc" id="L65">        log.info(String.format(&quot;Types: %s&quot;, entry.getPokemonTypes().get(0)));</span>
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">        if (entry.getPokemonTypes().size() &gt; 1) {</span>
+<span class="nc" id="L67">            embedBuilder.addField(&quot;Secondary Type&quot;, entry.getPokemonTypes().get(1), false);</span>
+        }
+<span class="fc" id="L69">        embedBuilder.setImage(entry.getImage());</span>
+
+<span class="fc" id="L71">        MessageEmbed embed = embedBuilder.build();</span>
+<span class="fc" id="L72">        MessageBuilder messageBuilder = new MessageBuilder();</span>
+<span class="fc" id="L73">        Message message =</span>
+                messageBuilder
+<span class="fc" id="L75">                        .setEmbeds(embed)</span>
+<span class="fc" id="L76">                        .setActionRows(</span>
+<span class="fc" id="L77">                                ActionRow.of(</span>
+<span class="fc" id="L78">                                        Button.primary(</span>
+<span class="fc" id="L79">                                                String.format(</span>
+                                                        &quot;keep-release:%d&quot;,
+<span class="fc" id="L81">                                                        entry.getPokedexNumber()),</span>
+                                                KEEP_BUTTON),
+<span class="fc" id="L83">                                        Button.danger(</span>
+<span class="fc" id="L84">                                                String.format(&quot;keep-release:%d&quot;, 0),</span>
+                                                RELEASE_BUTTON)))
+<span class="fc" id="L86">                        .build();</span>
+<span class="fc" id="L87">        return message;</span>
+    }
+
+    /**
+     * Executes the initial catch event.
+     *
+     * @param event - a slash command event, expected to be a &quot;/catch&quot;
+     */
+    @ExcludeFromJacocoGeneratedReport
+    @Override
+    public void onSlashCommandEvent(SlashCommandEvent event) {
+        log.info(&quot;event: /catch completed&quot;);
+        String discordUsername = event.getUser().getName();
+        event.reply(catchPokemon(discordUsername)).queue();
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

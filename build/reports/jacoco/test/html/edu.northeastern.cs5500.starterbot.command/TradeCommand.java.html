@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TradeCommand.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">edu.northeastern.cs5500.starterbot</a> &gt; <a href="index.source.html" class="el_package">edu.northeastern.cs5500.starterbot.command</a> &gt; <span class="el_source">TradeCommand.java</span></div><h1>TradeCommand.java</h1><pre class="source lang-java linenums">package edu.northeastern.cs5500.starterbot.command;
+
+import edu.northeastern.cs5500.starterbot.annotation.ExcludeFromJacocoGeneratedReport;
+import edu.northeastern.cs5500.starterbot.controller.TradeController;
+import edu.northeastern.cs5500.starterbot.exception.TradeException;
+import edu.northeastern.cs5500.starterbot.model.Trade;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.MessageBuilder;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.Button;
+
+/** The trade command will start the trading process between two users. */
+@Singleton
+public class TradeCommand implements SlashCommandHandler {
+    @Inject TradeController tradeController;
+
+    @Inject
+<span class="fc" id="L27">    public TradeCommand() {}</span>
+
+    /**
+     * Gets the trade command name.
+     *
+     * @return name - the name of trade command
+     */
+    @Override
+    public String getName() {
+<span class="fc" id="L36">        return &quot;trade&quot;;</span>
+    }
+
+    @Override
+    public CommandData getCommandData() {
+<span class="fc" id="L41">        return new CommandData(getName(), &quot;Trade pokemon with another trainer&quot;)</span>
+<span class="fc" id="L42">                .addOptions(</span>
+                        new OptionData(
+                                        OptionType.USER,
+                                        &quot;user&quot;,
+                                        &quot;The bot will send a trade request to a selected user&quot;)
+<span class="fc" id="L47">                                .setRequired(true));</span>
+    }
+
+    /**
+     * Generates an embed offering a trade.
+     *
+     * @param userMention - a user to me mentioned in the trade request
+     * @return a message embed
+     */
+    MessageEmbed renderTradeRequest(String userMention) {
+<span class="fc" id="L57">        EmbedBuilder embedBuilder = new EmbedBuilder();</span>
+<span class="fc" id="L58">        embedBuilder.setTitle(&quot;Trade request&quot;);</span>
+<span class="fc" id="L59">        embedBuilder.setDescription(String.format(&quot;%s wants to trade with you!&quot;, userMention));</span>
+<span class="fc" id="L60">        return embedBuilder.build();</span>
+    }
+
+    /**
+     * Generates a message offering a trade.
+     *
+     * @param userMention - a user to me mentioned in the trade request
+     * @return a message to be sent
+     */
+    Message renderTradeMessage(String userMention) {
+<span class="fc" id="L70">        MessageEmbed embed = renderTradeRequest(userMention);</span>
+<span class="fc" id="L71">        MessageBuilder messageBuilder = new MessageBuilder();</span>
+<span class="fc" id="L72">        Message message =</span>
+                messageBuilder
+<span class="fc" id="L74">                        .setEmbeds(embed)</span>
+<span class="fc" id="L75">                        .setActionRows(</span>
+<span class="fc" id="L76">                                ActionRow.of(</span>
+<span class="fc" id="L77">                                        Button.success(&quot;accept_trade&quot;, &quot;Accept request&quot;),</span>
+<span class="fc" id="L78">                                        Button.danger(&quot;decline_trade&quot;, &quot;Decline request&quot;)))</span>
+<span class="fc" id="L79">                        .build();</span>
+<span class="fc" id="L80">        return message;</span>
+    }
+    /**
+     * Sends a message to confirm the trade request
+     *
+     * @param jda jda object of this event
+     * @param trade current trade
+     */
+    @ExcludeFromJacocoGeneratedReport
+    private void sendConfirmTradeStartRequest(JDA jda, Trade trade) {
+        jda.retrieveUserById(trade.getUser1Id())
+                .queue(
+                        user1 -&gt; {
+<span class="nc" id="L93">                            Message message = renderTradeMessage(user1.getAsMention());</span>
+<span class="nc" id="L94">                            jda.retrieveUserById(trade.getUser2Id())</span>
+<span class="nc" id="L95">                                    .flatMap(user2 -&gt; user2.openPrivateChannel())</span>
+<span class="nc" id="L96">                                    .flatMap(channel -&gt; channel.sendMessage(message))</span>
+<span class="nc" id="L97">                                    .queue(</span>
+                                            msg -&gt;
+<span class="nc" id="L99">                                                    tradeController.addPendingMessageId(</span>
+<span class="nc" id="L100">                                                            trade.getId(), msg.getId()));</span>
+<span class="nc" id="L101">                        });</span>
+    }
+
+    /**
+     * Processes the request for trade.
+     *
+     * @param event - an event expected to be a SlashCommandEvent
+     */
+    @ExcludeFromJacocoGeneratedReport
+    @Override
+    public void onSlashCommandEvent(SlashCommandEvent event) {
+        String sourceUserId = event.getUser().getId();
+        String targetUserId = event.getOption(&quot;user&quot;).getAsUser().getId();
+        try {
+            Trade trade = tradeController.beginTrade(sourceUserId, targetUserId);
+            if (trade != null) {
+                sendConfirmTradeStartRequest(event.getJDA(), trade);
+                event.getJDA()
+                        .retrieveUserById(targetUserId)
+                        .queue(
+                                user -&gt; {
+<span class="nc" id="L122">                                    event.reply(</span>
+<span class="nc" id="L123">                                                    String.format(</span>
+                                                            &quot;Waiting for %s to accept request, the trade will continue in the DM with the Pokemon bot&quot;,
+<span class="nc" id="L125">                                                            user.getAsMention()))</span>
+<span class="nc" id="L126">                                            .queue();</span>
+<span class="nc" id="L127">                                });</span>
+            }
+        } catch (TradeException e) {
+            event.reply(e.getMessage()).queue();
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>
